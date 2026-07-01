@@ -10,12 +10,10 @@ const Calendario = ({ reservas = [] }) => {
   const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6"];
 
   const reservasDelDia = reservas.filter(
-    (reserva) => reserva.fecha === fechaSeleccionada
+    (reserva) => reserva.fecha === fechaSeleccionada,
   );
 
-  const mesasOcupadas = new Set(
-    reservasDelDia.map((reserva) => reserva.mesa)
-  );
+  const mesasOcupadas = new Set(reservasDelDia.map((reserva) => reserva.mesa));
 
   const totalMesas = mesas.length;
   const totalOcupadas = fechaSeleccionada ? mesasOcupadas.size : 0;
@@ -65,15 +63,17 @@ const Calendario = ({ reservas = [] }) => {
           </p>
 
           <div className="calendario-acciones">
-            <Link
-              to={usuarioActivo ? "/reservas" : "/login"}
-              className="btn btn-warning"
-            >
-              {textoBotonReserva()}
-            </Link>
+            {!esAdministrador && (
+              <Link
+                to={usuarioActivo ? "/reservas" : "/login"}
+                className="btn btn-warning"
+              >
+                {textoBotonReserva()}
+              </Link>
+            )}
 
             {esAdministrador && (
-              <Link to="/lista-reservas" className="btn btn-outline-light">
+              <Link to="/lista-reservas" className="btn btn-warning">
                 Ver reportes
               </Link>
             )}
@@ -155,8 +155,8 @@ const Calendario = ({ reservas = [] }) => {
                         {!fechaSeleccionada
                           ? "Sin consulta"
                           : estaOcupada
-                          ? "Ocupada"
-                          : "Disponible"}
+                            ? "Ocupada"
+                            : "Disponible"}
                       </span>
                     </div>
 
