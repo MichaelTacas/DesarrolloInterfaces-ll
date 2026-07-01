@@ -6,10 +6,26 @@ const Calendario = ({ reservas = [] }) => {
 
   const usuarioActivo = JSON.parse(localStorage.getItem("usuarioActivo"));
   const esAdministrador = usuarioActivo?.rol === "Administrador";
+  const esCliente = usuarioActivo && !esAdministrador;
 
   const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6"];
 
   const reservasDelDia = reservas.filter(
+    (reserva) => reserva.fecha === fechaSeleccionada,
+  );
+
+  const reservasDelCliente = reservas.filter((reserva) => {
+    if (!usuarioActivo) {
+      return false;
+    }
+
+    return (
+      String(reserva.id_usuario) === String(usuarioActivo.id_usuario) ||
+      String(reserva.telefono) === String(usuarioActivo.telefono)
+    );
+  });
+
+  const reservasClienteDelDia = reservasDelCliente.filter(
     (reserva) => reserva.fecha === fechaSeleccionada,
   );
 
@@ -135,12 +151,12 @@ const Calendario = ({ reservas = [] }) => {
           )}
 
           <div className="row g-4">
-            {mesasParaMostrar.map((mesa, index) => {
+            {mesasParaMostrar.map((mesa) => {
               const reservasMesa = obtenerReservasPorMesa(mesa);
               const estaOcupada = fechaSeleccionada && mesasOcupadas.has(mesa);
 
               return (
-                <div className="col-md-6 col-lg-4" key={index}>
+                <div className="col-md-6 col-lg-4" key={mesa}>
                   <div
                     className={
                       estaOcupada
@@ -170,8 +186,14 @@ const Calendario = ({ reservas = [] }) => {
 
                     {esAdministrador && fechaSeleccionada && estaOcupada && (
                       <div className="mesa-reservas">
-                        {reservasMesa.map((reserva, i) => (
-                          <div className="mesa-reserva-item" key={i}>
+                        {reservasMesa.map((reserva) => (
+                          <div
+                            className="mesa-reserva-item"
+                            key={
+                              reserva.id_reserva ||
+                              `${reserva.mesa}-${reserva.hora}`
+                            }
+                          >
                             <strong>{reserva.hora}</strong>
                             <p>{reserva.nombre}</p>
                             <small>{reserva.personas} persona(s)</small>
@@ -202,6 +224,61 @@ const Calendario = ({ reservas = [] }) => {
               </div>
             )}
 
+          {esCliente && (
+            <div className="mis-reservas-cliente">
+              <div className="mis-reservas-header">
+                <span>Mis reservas</span>
+                <h2>Mis reservas registradas</h2>
+              </div>
+
+              {reservasDelCliente.length === 0 ? (
+                <div className="mis-reservas-vacio">
+                  Todavía no tienes reservas registradas.
+                </div>
+              ) : (
+                <div className="row g-4">
+                  {reservasDelCliente.map((reserva) => (
+                    <div
+                      className="col-md-6"
+                      key={reserva.id_reserva || reserva.hora}
+                    >
+                      <div className="mi-reserva-card">
+                        <div className="mi-reserva-card-header">
+                          <h4>Tienes una reserva</h4>
+                          <span>{reserva.fecha}</span>
+                        </div>
+
+                        <div className="mi-reserva-detalle">
+                          <p>
+                            <strong>Mesa:</strong> {reserva.mesa}
+                          </p>
+
+                          <p>
+                            <strong>Hora:</strong> {reserva.hora}
+                          </p>
+
+                          <p>
+                            <strong>Personas:</strong> {reserva.personas}
+                          </p>
+
+                          <p>
+                            <strong>Cliente:</strong> {reserva.nombre}
+                          </p>
+
+                          {reserva.comentario && (
+                            <p>
+                              <strong>Comentario:</strong> {reserva.comentario}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {esAdministrador && (
             <div className="reservas-dia-card">
               <h2>Reservas del día</h2>
@@ -229,8 +306,8 @@ const Calendario = ({ reservas = [] }) => {
                     </thead>
 
                     <tbody>
-                      {reservasDelDia.map((reserva, index) => (
-                        <tr key={reserva.id_reserva || index}>
+                      {reservasDelDia.map((reserva) => (
+                        <tr key={reserva.id_reserva}>
                           <td>{reserva.nombre}</td>
                           <td>{reserva.telefono}</td>
                           <td>{reserva.hora}</td>

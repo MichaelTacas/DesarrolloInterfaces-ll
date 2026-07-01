@@ -1,25 +1,63 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
 
 const ListaReservas = ({ reservas = [], eliminarReserva }) => {
-  const totalReservas = reservas.length;
-  const totalMesasSistema = 6;
+  const [filtroMesa, setFiltroMesa] = useState("");
+  const [filtroCliente, setFiltroCliente] = useState("");
+  const [filtroFecha, setFiltroFecha] = useState("");
 
-  const mesasRegistradas = new Set(reservas.map((reserva) => reserva.mesa))
-    .size;
+  const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6"];
+  const totalMesasSistema = mesas.length;
+
+  const clientesUnicos = Object.values(
+    reservas.reduce((acumulador, reserva) => {
+      const clave = reserva.telefono || reserva.nombre;
+
+      if (!acumulador[clave]) {
+        acumulador[clave] = {
+          nombre: reserva.nombre,
+          telefono: reserva.telefono,
+        };
+      }
+
+      return acumulador;
+    }, {})
+  );
+
+  const reservasFiltradas = reservas.filter((reserva) => {
+    const coincideMesa = filtroMesa === "" || reserva.mesa === filtroMesa;
+
+    const coincideCliente =
+      filtroCliente === "" ||
+      reserva.nombre.toLowerCase().includes(filtroCliente.toLowerCase()) ||
+      reserva.telefono.includes(filtroCliente);
+
+    const coincideFecha = filtroFecha === "" || reserva.fecha === filtroFecha;
+
+    return coincideMesa && coincideCliente && coincideFecha;
+  });
+
+  const totalReservas = reservasFiltradas.length;
+
+  const mesasRegistradas = new Set(
+    reservasFiltradas.map((reserva) => reserva.mesa)
+  ).size;
 
   const clientesRegistrados = new Set(
-    reservas.map((reserva) => reserva.telefono)
+    reservasFiltradas.map((reserva) => reserva.telefono)
   ).size;
 
   const horariosRegistrados = new Set(
-    reservas.map((reserva) => reserva.hora)
+    reservasFiltradas.map((reserva) => reserva.hora)
   ).size;
 
-  const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6"];
+  const limpiarFiltros = () => {
+    setFiltroMesa("");
+    setFiltroCliente("");
+    setFiltroFecha("");
+  };
 
   const reservasPorFecha = Object.values(
-    reservas.reduce((acumulador, reserva) => {
+    reservasFiltradas.reduce((acumulador, reserva) => {
       const fecha = reserva.fecha;
 
       if (!acumulador[fecha]) {
@@ -38,7 +76,9 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
   );
 
   const reporteMesas = mesas.map((mesa) => {
-    const reservasMesa = reservas.filter((reserva) => reserva.mesa === mesa);
+    const reservasMesa = reservasFiltradas.filter(
+      (reserva) => reserva.mesa === mesa
+    );
 
     return {
       mesa,
@@ -48,7 +88,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
   });
 
   const reservasPorHorario = Object.values(
-    reservas.reduce((acumulador, reserva) => {
+    reservasFiltradas.reduce((acumulador, reserva) => {
       const hora = reserva.hora;
 
       if (!acumulador[hora]) {
@@ -65,7 +105,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
   );
 
   const clientesConReservas = Object.values(
-    reservas.reduce((acumulador, reserva) => {
+    reservasFiltradas.reduce((acumulador, reserva) => {
       const telefono = reserva.telefono;
 
       if (!acumulador[telefono]) {
@@ -92,25 +132,105 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
 
           <p>
             Revisa las reservas registradas, controla la disponibilidad de mesas
-            y analiza la información más importante del restaurante.
+            y filtra la información por mesa, cliente o fecha.
           </p>
-
-          <div className="lista-botones">
-            <Link to="/calendario" className="btn btn-outline-light">
-              Ver panel
-            </Link>
-          </div>
         </div>
       </section>
 
       <section className="lista-contenido">
         <div className="container">
+          <div className="filtros-reportes-card">
+            <div className="filtros-reportes-header">
+              <div>
+                <span>Filtros de búsqueda</span>
+                <h2>Buscar reservas</h2>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                onClick={limpiarFiltros}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+
+            <div className="row g-3">
+              <div className="col-md-4">
+                <label htmlFor="filtroMesa" className="form-label">
+                  Filtrar por mesa
+                </label>
+
+                <select
+                  id="filtroMesa"
+                  className="form-select"
+                  value={filtroMesa}
+                  onChange={(e) => setFiltroMesa(e.target.value)}
+                >
+                  <option value="">Todas las mesas</option>
+
+                  {mesas.map((mesa) => (
+                    <option key={mesa} value={mesa}>
+                      {mesa}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-md-4">
+                <label htmlFor="filtroCliente" className="form-label">
+                  Filtrar por cliente
+                </label>
+
+                <input
+                  id="filtroCliente"
+                  type="text"
+                  className="form-control"
+                  placeholder="Nombre o teléfono"
+                  value={filtroCliente}
+                  onChange={(e) => setFiltroCliente(e.target.value)}
+                  list="clientesReservas"
+                />
+
+                <datalist id="clientesReservas">
+                  {clientesUnicos.map((cliente) => (
+                    <option
+                      key={cliente.telefono}
+                      value={cliente.nombre}
+                    >
+                      {cliente.telefono}
+                    </option>
+                  ))}
+                </datalist>
+              </div>
+
+              <div className="col-md-4">
+                <label htmlFor="filtroFecha" className="form-label">
+                  Filtrar por fecha
+                </label>
+
+                <input
+                  id="filtroFecha"
+                  type="date"
+                  className="form-control"
+                  value={filtroFecha}
+                  onChange={(e) => setFiltroFecha(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="filtros-resultados">
+              <strong>Resultados encontrados:</strong>
+              <span>{reservasFiltradas.length}</span>
+            </div>
+          </div>
+
           <div className="row g-4 mb-5">
             <div className="col-md-3 col-sm-6">
               <div className="lista-resumen-card">
                 <span>Total de reservas</span>
                 <h3>{totalReservas}</h3>
-                <p>Reservas activas registradas</p>
+                <p>Reservas según los filtros aplicados</p>
               </div>
             </div>
 
@@ -126,7 +246,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
               <div className="lista-resumen-card">
                 <span>Clientes</span>
                 <h3>{clientesRegistrados}</h3>
-                <p>Clientes con reservas registradas</p>
+                <p>Clientes encontrados en el filtro</p>
               </div>
             </div>
 
@@ -147,14 +267,14 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
               </div>
             </div>
 
-            {reservas.length === 0 ? (
+            {reservasFiltradas.length === 0 ? (
               <div className="lista-vacia">
-                <h3>No hay reservas registradas</h3>
+                <h3>No hay reservas encontradas</h3>
 
                 <p>
-                  Cuando un cliente registre una reserva, aparecerá en esta
-                  sección con los datos del cliente, fecha, hora y mesa
-                  seleccionada.
+                  No existen reservas que coincidan con los filtros
+                  seleccionados. Puedes limpiar los filtros para ver todas las
+                  reservas.
                 </p>
               </div>
             ) : (
@@ -175,8 +295,8 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
                   </thead>
 
                   <tbody>
-                    {reservas.map((reserva, index) => (
-                      <tr key={reserva.id_reserva || index}>
+                    {reservasFiltradas.map((reserva, index) => (
+                      <tr key={reserva.id_reserva || reserva.telefono}>
                         <td>{index + 1}</td>
                         <td>{reserva.nombre}</td>
                         <td>{reserva.telefono}</td>
@@ -208,6 +328,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
               <div className="col-md-3 col-sm-6">
                 <div className="reporte-card">
                   <h4>Reservas por fecha</h4>
+
                   <p>
                     Permite revisar cuántas reservas existen por cada día de
                     atención.
@@ -218,6 +339,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
               <div className="col-md-3 col-sm-6">
                 <div className="reporte-card">
                   <h4>Mesas ocupadas</h4>
+
                   <p>
                     Ayuda a identificar qué mesas tienen reservas registradas.
                   </p>
@@ -227,6 +349,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
               <div className="col-md-3 col-sm-6">
                 <div className="reporte-card">
                   <h4>Reservas por horario</h4>
+
                   <p>
                     Permite controlar los horarios con mayor demanda de
                     reservas.
@@ -237,6 +360,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
               <div className="col-md-3 col-sm-6">
                 <div className="reporte-card">
                   <h4>Clientes registrados</h4>
+
                   <p>
                     Muestra los clientes que realizaron reservas en el sistema.
                   </p>

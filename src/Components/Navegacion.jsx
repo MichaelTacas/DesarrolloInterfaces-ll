@@ -43,17 +43,6 @@ const Navegacion = () => {
             {esAdministrador ? (
               <>
                 <NavLink
-                  to="/calendario"
-                  className={({ isActive }) =>
-                    isActive
-                      ? "nav-link nav-link-restaurante activo"
-                      : "nav-link nav-link-restaurante"
-                  }
-                >
-                  Panel
-                </NavLink>
-
-                <NavLink
                   to="/lista-reservas"
                   className={({ isActive }) =>
                     isActive
