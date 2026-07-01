@@ -56,18 +56,7 @@ const Inicio = () => {
       precio: 'S/ 35.00',
       imagen: PolloAlaBrasa
     },
-    {
-      nombre: 'Neto a la horno',
-      descripcion: 'Lechon maduro al horno con una manzanita en la boca y una zanahoria en la cola, acompañado de papas doradas y ensalada fresca.',
-      precio: 'S/ 200',
-      imagen: PolloAlaBrasa
-    },
-    {
-      nombre: 'Yo estuve aqui',
-      descripcion: 'Yo estuve aqui',
-      precio: 'S/ 200',
-      imagen: PolloAlaBrasa
-    }
+    
   ];
 
   return (

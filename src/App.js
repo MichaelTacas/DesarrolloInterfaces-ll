@@ -1,55 +1,105 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import './App.css';
-import Navegacion from './Components/Navegacion';
-import Inicio from './Components/Inicio';
-import Servicios from './Components/Servicios';
-import Contacto from './Components/Contacto';
-import Footer from './Components/Footer';
-import Reservas from './Components/Reservas';
-import ListaReservas from './Components/ListaReservas';
-import Calendario from './Components/Calendario';
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./App.css";
+
+
+
+import Navegacion from "./Components/Navegacion";
+import Inicio from "./Components/Inicio";
+import Servicios from "./Components/Servicios";
+import Contacto from "./Components/Contacto";
+import Footer from "./Components/Footer";
+import Reservas from "./Components/Reservas";
+import ListaReservas from "./Components/ListaReservas";
+import Calendario from "./Components/Calendario";
+import Login from "./Components/Login";
 
 const App = () => {
   const [reservas, setReservas] = useState([]);
-  const [mensaje, setMensaje] = useState('');
+  const [mensaje, setMensaje] = useState("");
 
-  useEffect(() => {
-    const reservasGuardadas = JSON.parse(localStorage.getItem('reservas')) || [];
-    setReservas(reservasGuardadas);
-  }, []);
+  const cargarReservas = async () => {
+    try {
+      const respuesta = await fetch("http://localhost:3001/reservas");
+      const data = await respuesta.json();
 
-  useEffect(() => {
-    localStorage.setItem('reservas', JSON.stringify(reservas));
-  }, [reservas]);
+      if (!respuesta.ok) {
+        setMensaje(data.mensaje || "Error al cargar las reservas.");
+        return;
+      }
 
-  const agregarReserva = (nuevaReserva) => {
-    const existeReserva = reservas.some(
-      (reserva) =>
-        reserva.fecha === nuevaReserva.fecha &&
-        reserva.hora === nuevaReserva.hora &&
-        reserva.mesa === nuevaReserva.mesa
-    );
-
-    if (existeReserva) {
-      setMensaje('La mesa ya está reservada en esa fecha y hora.');
-      return false;
+      setReservas(data);
+    } catch (error) {
+      console.log("Error al cargar reservas:", error);
+      setMensaje("No se pudo conectar con el servidor.");
     }
-
-    setReservas([...reservas, nuevaReserva]);
-    setMensaje('Reserva registrada correctamente.');
-    return true;
   };
 
-  const eliminarReserva = (index) => {
-    const nuevasReservas = reservas.filter((_, i) => i !== index);
-    setReservas(nuevasReservas);
-    setMensaje('Reserva eliminada correctamente.');
+  useEffect(() => {
+    cargarReservas();
+  }, []);
+
+  const agregarReserva = async (nuevaReserva) => {
+    try {
+      const usuarioActivo = JSON.parse(localStorage.getItem("usuarioActivo"));
+
+      const reservaParaGuardar = {
+        ...nuevaReserva,
+        id_usuario: usuarioActivo?.id_usuario || null,
+      };
+
+      const respuesta = await fetch("http://localhost:3001/reservas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(reservaParaGuardar),
+      });
+
+      const data = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setMensaje(data.mensaje || "Error al registrar la reserva.");
+        return false;
+      }
+
+      setMensaje(data.mensaje || "Reserva registrada correctamente.");
+      await cargarReservas();
+      return true;
+    } catch (error) {
+      console.log("Error al registrar reserva:", error);
+      setMensaje("No se pudo conectar con el servidor.");
+      return false;
+    }
+  };
+
+  const eliminarReserva = async (idReserva) => {
+    try {
+      const respuesta = await fetch(
+        `http://localhost:3001/reservas/${idReserva}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setMensaje(data.mensaje || "Error al eliminar la reserva.");
+        return;
+      }
+
+      setMensaje(data.mensaje || "Reserva eliminada correctamente.");
+      await cargarReservas();
+    } catch (error) {
+      console.log("Error al eliminar reserva:", error);
+      setMensaje("No se pudo conectar con el servidor.");
+    }
   };
 
   const cerrarMensaje = () => {
-    setMensaje('');
+    setMensaje("");
   };
 
   return (
@@ -88,6 +138,7 @@ const App = () => {
           />
 
           <Route path="/contacto" element={<Contacto />} />
+          <Route path="/login" element={<Login />} />
         </Routes>
       </main>
 
@@ -97,4 +148,3 @@ const App = () => {
 };
 
 export default App;
-

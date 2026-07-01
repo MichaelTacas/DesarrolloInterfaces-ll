@@ -4,20 +4,18 @@ import { Link } from "react-router-dom";
 const Calendario = ({ reservas = [] }) => {
   const [fechaSeleccionada, setFechaSeleccionada] = useState("");
 
+  const usuarioActivo = JSON.parse(localStorage.getItem("usuarioActivo"));
+  const esAdministrador = usuarioActivo?.rol === "Administrador";
+
   const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6"];
 
-  const estiloBotonAmarillo = {
-    backgroundColor: "#ffd166",
-    borderColor: "#ffd166",
-    color: "#8b1e1e",
-    fontWeight: 700,
-  };
-
   const reservasDelDia = reservas.filter(
-    (reserva) => reserva.fecha === fechaSeleccionada,
+    (reserva) => reserva.fecha === fechaSeleccionada
   );
 
-  const mesasOcupadas = new Set(reservasDelDia.map((reserva) => reserva.mesa));
+  const mesasOcupadas = new Set(
+    reservasDelDia.map((reserva) => reserva.mesa)
+  );
 
   const totalMesas = mesas.length;
   const totalOcupadas = fechaSeleccionada ? mesasOcupadas.size : 0;
@@ -25,31 +23,60 @@ const Calendario = ({ reservas = [] }) => {
     ? totalMesas - totalOcupadas
     : totalMesas;
 
+  const mesasParaMostrar =
+    !fechaSeleccionada || esAdministrador
+      ? mesas
+      : mesas.filter((mesa) => !mesasOcupadas.has(mesa));
+
   const obtenerReservasPorMesa = (mesa) => {
     return reservasDelDia.filter((reserva) => reserva.mesa === mesa);
+  };
+
+  const textoBotonReserva = () => {
+    if (esAdministrador) {
+      return "Registrar reserva";
+    }
+
+    if (usuarioActivo) {
+      return "Reservar mesa";
+    }
+
+    return "Iniciar sesión para reservar";
   };
 
   return (
     <div className="calendario-page">
       <section className="calendario-hero">
         <div className="container">
-          <span className="calendario-etiqueta">Panel administrativo</span>
+          <span className="calendario-etiqueta">
+            {esAdministrador ? "Panel administrativo" : "Disponibilidad"}
+          </span>
 
-          <h1>Panel de administración de reservas</h1>
+          <h1>
+            {esAdministrador
+              ? "Panel de administración de reservas"
+              : "Consulta las mesas disponibles"}
+          </h1>
 
           <p>
-            Consulta la disponibilidad de mesas, revisa las reservas del día y
-            controla la ocupación del restaurante.
+            {esAdministrador
+              ? "Controla la disponibilidad de mesas, revisa las reservas del día y gestiona la ocupación del restaurante."
+              : "Selecciona una fecha para ver qué mesas están disponibles. Para realizar una reserva, inicia sesión o crea una cuenta."}
           </p>
 
           <div className="calendario-acciones">
-            <Link to="/reservas" className="btn" style={estiloBotonAmarillo}>
-              Registrar reserva
+            <Link
+              to={usuarioActivo ? "/reservas" : "/login"}
+              className="btn btn-warning"
+            >
+              {textoBotonReserva()}
             </Link>
 
-            <Link to="/lista-reservas" className="btn btn-outline-light">
-              Ver lista de reservas
-            </Link>
+            {esAdministrador && (
+              <Link to="/lista-reservas" className="btn btn-outline-light">
+                Ver reportes
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -57,7 +84,10 @@ const Calendario = ({ reservas = [] }) => {
       <section className="calendario-contenido">
         <div className="container">
           <div className="calendario-panel-fecha">
-            <span>Estado de mesas</span>
+            <span>
+              {esAdministrador ? "Estado de mesas" : "Mesas disponibles"}
+            </span>
+
             <h2>Selecciona una fecha para consultar</h2>
 
             <input
@@ -68,42 +98,44 @@ const Calendario = ({ reservas = [] }) => {
             />
           </div>
 
-          <div className="row g-4 dashboard-resumen">
-            <div className="col-md-3 col-sm-6">
-              <div className="dashboard-card">
-                <span>Total de mesas</span>
-                <h3>{totalMesas}</h3>
-                <p>Mesas registradas en el sistema</p>
+          {esAdministrador && (
+            <div className="row g-4 dashboard-resumen">
+              <div className="col-md-3 col-sm-6">
+                <div className="dashboard-card">
+                  <span>Total de mesas</span>
+                  <h3>{totalMesas}</h3>
+                  <p>Mesas registradas en el sistema</p>
+                </div>
               </div>
-            </div>
 
-            <div className="col-md-3 col-sm-6">
-              <div className="dashboard-card ocupadas">
-                <span>Mesas ocupadas</span>
-                <h3>{totalOcupadas}</h3>
-                <p>Mesas reservadas en la fecha seleccionada</p>
+              <div className="col-md-3 col-sm-6">
+                <div className="dashboard-card ocupadas">
+                  <span>Mesas ocupadas</span>
+                  <h3>{totalOcupadas}</h3>
+                  <p>Mesas reservadas en la fecha seleccionada</p>
+                </div>
               </div>
-            </div>
 
-            <div className="col-md-3 col-sm-6">
-              <div className="dashboard-card disponibles">
-                <span>Mesas disponibles</span>
-                <h3>{totalDisponibles}</h3>
-                <p>Mesas libres para nuevas reservas</p>
+              <div className="col-md-3 col-sm-6">
+                <div className="dashboard-card disponibles">
+                  <span>Mesas disponibles</span>
+                  <h3>{totalDisponibles}</h3>
+                  <p>Mesas libres para nuevas reservas</p>
+                </div>
               </div>
-            </div>
 
-            <div className="col-md-3 col-sm-6">
-              <div className="dashboard-card reservas">
-                <span>Reservas del día</span>
-                <h3>{reservasDelDia.length}</h3>
-                <p>Total de reservas registradas</p>
+              <div className="col-md-3 col-sm-6">
+                <div className="dashboard-card reservas">
+                  <span>Reservas del día</span>
+                  <h3>{reservasDelDia.length}</h3>
+                  <p>Total de reservas registradas</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="row g-4">
-            {mesas.map((mesa, index) => {
+            {mesasParaMostrar.map((mesa, index) => {
               const reservasMesa = obtenerReservasPorMesa(mesa);
               const estaOcupada = fechaSeleccionada && mesasOcupadas.has(mesa);
 
@@ -123,8 +155,8 @@ const Calendario = ({ reservas = [] }) => {
                         {!fechaSeleccionada
                           ? "Sin consulta"
                           : estaOcupada
-                            ? "Ocupada"
-                            : "Disponible"}
+                          ? "Ocupada"
+                          : "Disponible"}
                       </span>
                     </div>
 
@@ -136,7 +168,7 @@ const Calendario = ({ reservas = [] }) => {
                       <p>Esta mesa está disponible para reservar.</p>
                     )}
 
-                    {fechaSeleccionada && estaOcupada && (
+                    {esAdministrador && fechaSeleccionada && estaOcupada && (
                       <div className="mesa-reservas">
                         {reservasMesa.map((reserva, i) => (
                           <div className="mesa-reserva-item" key={i}>
@@ -160,47 +192,59 @@ const Calendario = ({ reservas = [] }) => {
             })}
           </div>
 
-          <div className="reservas-dia-card">
-            <h2>Reservas del día</h2>
-
-            {!fechaSeleccionada ? (
-              <div className="reservas-dia-vacio">
-                Selecciona una fecha para ver las reservas registradas.
-              </div>
-            ) : reservasDelDia.length === 0 ? (
-              <div className="reservas-dia-vacio">
-                No hay reservas registradas para esta fecha.
-              </div>
-            ) : (
-              <div className="table-responsive">
-                <table className="table reservas-tabla">
-                  <thead>
-                    <tr>
-                      <th>Cliente</th>
-                      <th>Teléfono</th>
-                      <th>Hora</th>
-                      <th>Mesa</th>
-                      <th>Personas</th>
-                      <th>Comentario</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {reservasDelDia.map((reserva, index) => (
-                      <tr key={index}>
-                        <td>{reserva.nombre}</td>
-                        <td>{reserva.telefono}</td>
-                        <td>{reserva.hora}</td>
-                        <td>{reserva.mesa}</td>
-                        <td>{reserva.personas}</td>
-                        <td>{reserva.comentario || "Sin comentario"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {!esAdministrador &&
+            fechaSeleccionada &&
+            mesasParaMostrar.length === 0 && (
+              <div className="reservas-dia-card">
+                <div className="reservas-dia-vacio">
+                  No hay mesas disponibles para esta fecha.
+                </div>
               </div>
             )}
-          </div>
+
+          {esAdministrador && (
+            <div className="reservas-dia-card">
+              <h2>Reservas del día</h2>
+
+              {!fechaSeleccionada ? (
+                <div className="reservas-dia-vacio">
+                  Selecciona una fecha para ver las reservas registradas.
+                </div>
+              ) : reservasDelDia.length === 0 ? (
+                <div className="reservas-dia-vacio">
+                  No hay reservas registradas para esta fecha.
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table reservas-tabla">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Teléfono</th>
+                        <th>Hora</th>
+                        <th>Mesa</th>
+                        <th>Personas</th>
+                        <th>Comentario</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {reservasDelDia.map((reserva, index) => (
+                        <tr key={reserva.id_reserva || index}>
+                          <td>{reserva.nombre}</td>
+                          <td>{reserva.telefono}</td>
+                          <td>{reserva.hora}</td>
+                          <td>{reserva.mesa}</td>
+                          <td>{reserva.personas}</td>
+                          <td>{reserva.comentario || "Sin comentario"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
     </div>

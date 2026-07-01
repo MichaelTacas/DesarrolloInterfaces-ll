@@ -1,63 +1,105 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
+import { Link, useNavigate } from "react-router-dom";
 
-import ReservaMesa from '../img_reservar/ReservaMesa.png';
-import ReservaAmbiente from '../img_reservar/ReservaAmbiente.png';
-import ReservaChef from '../img_reservar/ReservaChef.png';
-import ReservaPlato from '../img_reservar/ReservaPlato.png';
+import ReservaMesa from "../img_reservar/ReservaMesa.png";
+import ReservaAmbiente from "../img_reservar/ReservaAmbiente.png";
+import ReservaChef from "../img_reservar/ReservaChef.png";
+import ReservaPlato from "../img_reservar/ReservaPlato.png";
 
-const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
+const Reservas = ({ agregarReserva, mensaje = "", cerrarMensaje }) => {
+  const navigate = useNavigate();
+
+  const usuarioActivo = JSON.parse(localStorage.getItem("usuarioActivo"));
+  const esAdministrador = usuarioActivo?.rol === "Administrador";
+  const esCliente = usuarioActivo && !esAdministrador;
+
+  const horasDisponibles = [
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+    "18:00",
+    "19:00",
+    "20:00",
+    "21:00",
+    "22:00",
+  ];
+
   const [reserva, setReserva] = useState({
-    nombre: '',
-    telefono: '',
-    fecha: '',
-    hora: '',
-    personas: '',
-    mesa: '',
-    comentario: ''
+    nombre: esCliente ? usuarioActivo.nombres : "",
+    telefono: esCliente ? usuarioActivo.telefono : "",
+    fecha: "",
+    hora: "",
+    personas: "",
+    mesa: "",
+    comentario: "",
   });
 
   const beneficios = [
     {
-      titulo: 'Ambiente acogedor',
-      descripcion: 'Disfruta tu reserva en un espacio cálido y familiar.',
-      imagen: ReservaAmbiente
+      titulo: "Ambiente acogedor",
+      descripcion: "Disfruta tu reserva en un espacio cálido y familiar.",
+      imagen: ReservaAmbiente,
     },
     {
-      titulo: 'Atención preparada',
-      descripcion: 'Nuestro equipo organiza mejor cada reserva registrada.',
-      imagen: ReservaChef
+      titulo: "Atención preparada",
+      descripcion: "Nuestro equipo organiza mejor cada reserva registrada.",
+      imagen: ReservaChef,
     },
     {
-      titulo: 'Sabor criollo',
-      descripcion: 'Acompaña tu visita con platos tradicionales peruanos.',
-      imagen: ReservaPlato
-    }
+      titulo: "Sabor criollo",
+      descripcion: "Acompaña tu visita con platos tradicionales peruanos.",
+      imagen: ReservaPlato,
+    },
   ];
 
+  useEffect(() => {
+    if (!usuarioActivo) {
+      navigate("/login");
+    }
+  }, [usuarioActivo, navigate]);
+
+  if (!usuarioActivo) {
+    return null;
+  }
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
     setReserva({
       ...reserva,
-      [e.target.name]: e.target.value
+      [name]: value,
     });
   };
 
-  const handleSubmit = (e) => {
+  const limpiarReserva = () => {
+    setReserva({
+      nombre: esCliente ? usuarioActivo.nombres : "",
+      telefono: esCliente ? usuarioActivo.telefono : "",
+      fecha: "",
+      hora: "",
+      personas: "",
+      mesa: "",
+      comentario: "",
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const reservaRegistrada = agregarReserva(reserva);
+    const reservaFinal = {
+      ...reserva,
+      nombre: esCliente ? usuarioActivo.nombres : reserva.nombre,
+      telefono: esCliente ? usuarioActivo.telefono : reserva.telefono,
+    };
+
+    const reservaRegistrada = await agregarReserva(reservaFinal);
 
     if (reservaRegistrada) {
-      setReserva({
-        nombre: '',
-        telefono: '',
-        fecha: '',
-        hora: '',
-        personas: '',
-        mesa: '',
-        comentario: ''
-      });
+      limpiarReserva();
     }
   };
 
@@ -67,11 +109,16 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
         <div className="container">
           <span className="reservas-etiqueta">Reservas online</span>
 
-          <h1>Reserva tu mesa</h1>
+          <h1>
+            {esCliente
+              ? `Hola, ${usuarioActivo.nombres}`
+              : "Registrar una reserva"}
+          </h1>
 
           <p>
-            Elige la fecha, hora y mesa para disfrutar una experiencia criolla
-            en Sabor Criollo.
+            {esCliente
+              ? "Completa los datos de tu reserva y disfruta una experiencia criolla en Sabor Criollo."
+              : "Registra reservas de clientes y organiza la disponibilidad de mesas del restaurante."}
           </p>
         </div>
       </section>
@@ -91,7 +138,8 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
                   <h3>Ambiente cálido y atención organizada</h3>
 
                   <p>
-                    Registra tu reserva y evita cruces de horarios en la atención.
+                    Registra tu reserva y evita cruces de horarios en la
+                    atención.
                   </p>
                 </div>
               </div>
@@ -99,18 +147,30 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
 
             <div className="col-lg-6">
               <div className="reservas-form-card">
-                <h2>Datos de la reserva</h2>
+                <h2>
+                  {esCliente
+                    ? "Completa los datos de tu reserva"
+                    : "Datos de la reserva del cliente"}
+                </h2>
 
                 <p className="reservas-form-descripcion">
                   Completa la información para separar una mesa disponible.
                 </p>
 
+                {esCliente && (
+                  <div className="reserva-usuario-info">
+                    <strong>Reserva a nombre de:</strong>
+                    <span>{usuarioActivo.nombres}</span>
+                    <small>Teléfono: {usuarioActivo.telefono}</small>
+                  </div>
+                )}
+
                 {mensaje && (
                   <div
                     className={
-                      mensaje.includes('correctamente')
-                        ? 'alert alert-success reservas-alerta'
-                        : 'alert alert-danger reservas-alerta'
+                      mensaje.includes("correctamente")
+                        ? "alert alert-success reservas-alerta"
+                        : "alert alert-danger reservas-alerta"
                     }
                   >
                     <span>{mensaje}</span>
@@ -126,38 +186,48 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
 
                 <form onSubmit={handleSubmit}>
                   <div className="row">
+                    {!esCliente && (
+                      <>
+                        <div className="col-md-6 mb-3">
+                          <label htmlFor="nombre" className="form-label">
+                            Nombre del cliente
+                          </label>
+
+                          <input
+                            id="nombre"
+                            type="text"
+                            name="nombre"
+                            className="form-control"
+                            placeholder="Ej: Juan Pérez"
+                            value={reserva.nombre}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+
+                        <div className="col-md-6 mb-3">
+                          <label htmlFor="telefono" className="form-label">
+                            Teléfono
+                          </label>
+
+                          <input
+                            id="telefono"
+                            type="text"
+                            name="telefono"
+                            className="form-control"
+                            placeholder="Ej: 999999999"
+                            value={reserva.telefono}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                      </>
+                    )}
+
                     <div className="col-md-6 mb-3">
-                      <label htmlFor="nombre" className="form-label">Nombre del cliente</label>
-
-                      <input
-                        id="nombre"
-                        type="text"
-                        name="nombre"
-                        className="form-control"
-                        placeholder="Ej: Juan Pérez"
-                        value={reserva.nombre}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="telefono" className="form-label">Teléfono</label>
-
-                      <input
-                        id="telefono"
-                        type="text"
-                        name="telefono"
-                        className="form-control"
-                        placeholder="Ej: 999999999"
-                        value={reserva.telefono}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="fecha" className="form-label">Fecha</label>
+                      <label htmlFor="fecha" className="form-label">
+                        Fecha
+                      </label>
 
                       <input
                         id="fecha"
@@ -171,21 +241,32 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
                     </div>
 
                     <div className="col-md-6 mb-3">
-                      <label htmlFor="hora" className="form-label">Hora</label>
+                      <label htmlFor="hora" className="form-label">
+                        Hora
+                      </label>
 
-                      <input
+                      <select
                         id="hora"
-                        type="time"
                         name="hora"
-                        className="form-control"
+                        className="form-select"
                         value={reserva.hora}
                         onChange={handleChange}
                         required
-                      />
+                      >
+                        <option value="">Seleccionar hora</option>
+
+                        {horasDisponibles.map((hora) => (
+                          <option value={hora} key={hora}>
+                            {hora}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="col-md-6 mb-3">
-                      <label htmlFor="personas" className="form-label">Cantidad de personas</label>
+                      <label htmlFor="personas" className="form-label">
+                        Cantidad de personas
+                      </label>
 
                       <select
                         id="personas"
@@ -206,7 +287,9 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
                     </div>
 
                     <div className="col-md-6 mb-3">
-                      <label htmlFor="mesa" className="form-label">Mesa</label>
+                      <label htmlFor="mesa" className="form-label">
+                        Mesa
+                      </label>
 
                       <select
                         id="mesa"
@@ -227,7 +310,9 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
                     </div>
 
                     <div className="col-12 mb-3">
-                      <label htmlFor="comentario" className="form-label">Comentario opcional</label>
+                      <label htmlFor="comentario" className="form-label">
+                        Comentario opcional
+                      </label>
 
                       <textarea
                         id="comentario"
@@ -256,8 +341,8 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
               <h2>Reserva con más comodidad</h2>
 
               <p>
-                Además de separar tu mesa, puedes conocer el ambiente, la atención
-                y el estilo gastronómico de Sabor Criollo.
+                Además de separar tu mesa, puedes conocer el ambiente, la
+                atención y el estilo gastronómico de Sabor Criollo.
               </p>
             </div>
 
@@ -304,7 +389,9 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
                 <div className="reservas-info-card">
                   <h4>Disponibilidad</h4>
 
-                  <p>Revisa las mesas reservadas antes de elegir tu horario.</p>
+                  <p>
+                    Revisa las mesas disponibles antes de elegir tu horario.
+                  </p>
 
                   <Link to="/calendario" className="reservas-link-calendario">
                     Ver calendario
@@ -322,7 +409,7 @@ const Reservas = ({ agregarReserva, mensaje, cerrarMensaje }) => {
 Reservas.propTypes = {
   agregarReserva: PropTypes.func.isRequired,
   mensaje: PropTypes.string,
-  cerrarMensaje: PropTypes.func.isRequired
+  cerrarMensaje: PropTypes.func.isRequired,
 };
 
 export default Reservas;
