@@ -180,7 +180,7 @@ app.get("/reservas", (req, res) => {
       estado,
       fecha_registro
       FROM reserva
-      ORDER BY fecha ASC, hora ASC
+      ORDER BY id_reserva ASC
   `;
 
   conexion.query(sql, (error, resultados) => {

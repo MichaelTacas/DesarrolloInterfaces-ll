@@ -25,8 +25,7 @@ const tarjetasReporte = [
   },
   {
     titulo: "Clientes registrados",
-    descripcion:
-      "Muestra los clientes que realizaron reservas en el sistema.",
+    descripcion: "Muestra los clientes que realizaron reservas en el sistema.",
   },
 ];
 
@@ -42,7 +41,7 @@ const agruparDatos = (lista, obtenerClave, crearItem, actualizarItem) => {
       actualizarItem(acumulador[clave], reserva);
 
       return acumulador;
-    }, {})
+    }, {}),
   );
 };
 
@@ -75,7 +74,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
         }
 
         return acumulador;
-      }, {})
+      }, {}),
     );
   }, [reservas]);
 
@@ -84,8 +83,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
       const nombre = reserva.nombre || "";
       const telefono = reserva.telefono || "";
 
-      const coincideMesa =
-        filtros.mesa === "" || reserva.mesa === filtros.mesa;
+      const coincideMesa = filtros.mesa === "" || reserva.mesa === filtros.mesa;
 
       const coincideCliente =
         filtros.cliente === "" ||
@@ -133,12 +131,12 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
     (item, reserva) => {
       item.total += 1;
       item.personas += Number(reserva.personas);
-    }
+    },
   );
 
   const reporteMesas = mesas.map((mesa) => {
     const total = reservasFiltradas.filter(
-      (reserva) => reserva.mesa === mesa
+      (reserva) => reserva.mesa === mesa,
     ).length;
 
     return {
@@ -157,7 +155,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
     }),
     (item) => {
       item.total += 1;
-    }
+    },
   );
 
   const clientesConReservas = agruparDatos(
@@ -170,7 +168,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
     }),
     (item) => {
       item.total += 1;
-    }
+    },
   );
 
   const renderTablaReporte = (columnas, datos, obtenerFilas) => {
@@ -332,8 +330,9 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
               <div className="table-responsive">
                 <table className="table lista-tabla">
                   <thead>
-                    <tr>
-                      <th>N°</th>
+                    <tr>                   
+                      <th>ID Reserva</th>
+                      <th>ID Usuario</th>
                       <th>Cliente</th>
                       <th>Teléfono</th>
                       <th>Fecha</th>
@@ -348,8 +347,9 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
 
                   <tbody>
                     {reservasFiltradas.map((reserva, index) => (
-                      <tr key={reserva.id_reserva}>
-                        <td>{index + 1}</td>
+                      <tr key={reserva.id_reserva}>                       
+                        <td>{reserva.id_reserva}</td>
+                        <td>{reserva.id_usuario || "Sin usuario"}</td>
                         <td>{reserva.nombre}</td>
                         <td>{reserva.telefono}</td>
                         <td>{reserva.fecha}</td>
@@ -401,7 +401,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
                       <td>{item.total}</td>
                       <td>{item.personas}</td>
                     </tr>
-                  )
+                  ),
                 )}
               </div>
 
@@ -417,7 +417,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
                       <td>{item.total}</td>
                       <td>{item.estado}</td>
                     </tr>
-                  )
+                  ),
                 )}
               </div>
 
@@ -432,7 +432,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
                       <td>{item.hora}</td>
                       <td>{item.total}</td>
                     </tr>
-                  )
+                  ),
                 )}
               </div>
 
@@ -448,7 +448,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
                       <td>{item.telefono}</td>
                       <td>{item.total}</td>
                     </tr>
-                  )
+                  ),
                 )}
               </div>
             </div>

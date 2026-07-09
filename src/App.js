@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
@@ -14,13 +14,26 @@ import Calendario from "./Components/Calendario";
 import Login from "./Components/Login";
 import GestionAdmin from "./Components/GestionAdmin";
 
+const API_RESERVAS = "http://localhost:3001/reservas";
+
+const prepararReserva = (reserva) => ({
+  nombre: reserva.nombre,
+  telefono: reserva.telefono,
+  fecha: reserva.fecha,
+  hora: reserva.hora,
+  personas: Number(reserva.personas),
+  mesa: reserva.mesa,
+  comentario: reserva.comentario,
+  estado: reserva.estado,
+});
+
 const App = () => {
   const [reservas, setReservas] = useState([]);
   const [mensaje, setMensaje] = useState("");
 
-  const cargarReservas = async () => {
+  const cargarReservas = useCallback(async () => {
     try {
-      const respuesta = await fetch("http://localhost:3001/reservas");
+      const respuesta = await fetch(API_RESERVAS);
       const data = await respuesta.json();
 
       if (!respuesta.ok) {
@@ -33,110 +46,84 @@ const App = () => {
       console.log("Error al cargar reservas:", error);
       setMensaje("No se pudo conectar con el servidor.");
     }
-  };
+  }, []);
 
   useEffect(() => {
     cargarReservas();
-  }, []);
+  }, [cargarReservas]);
 
-  const agregarReserva = async (nuevaReserva) => {
+  const enviarReserva = async ({
+    url,
+    metodo,
+    datos,
+    mensajeError,
+    mensajeCorrecto,
+  }) => {
     try {
-      const usuarioActivo = JSON.parse(localStorage.getItem("usuarioActivo"));
-
-      const reservaParaGuardar = {
-        ...nuevaReserva,
-        id_usuario: usuarioActivo?.id_usuario || null,
-      };
-
-      const respuesta = await fetch("http://localhost:3001/reservas", {
-        method: "POST",
+      const opciones = {
+        method: metodo,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(reservaParaGuardar),
-      });
+      };
 
+      if (datos) {
+        opciones.body = JSON.stringify(datos);
+      }
+
+      const respuesta = await fetch(url, opciones);
       const data = await respuesta.json();
 
       if (!respuesta.ok) {
-        setMensaje(data.mensaje || "Error al registrar la reserva.");
+        setMensaje(data.mensaje || mensajeError);
         return false;
       }
 
-      setMensaje(data.mensaje || "Reserva registrada correctamente.");
+      setMensaje(data.mensaje || mensajeCorrecto);
       await cargarReservas();
+
       return true;
     } catch (error) {
-      console.log("Error al registrar reserva:", error);
+      console.log("Error en la operación de reserva:", error);
       setMensaje("No se pudo conectar con el servidor.");
       return false;
     }
+  };
+
+  const agregarReserva = async (nuevaReserva) => {
+    const usuarioActivo = JSON.parse(localStorage.getItem("usuarioActivo"));
+
+    const reservaParaGuardar = {
+      ...nuevaReserva,
+      id_usuario: usuarioActivo?.id_usuario || null,
+    };
+
+    return enviarReserva({
+      url: API_RESERVAS,
+      metodo: "POST",
+      datos: reservaParaGuardar,
+      mensajeError: "Error al registrar la reserva.",
+      mensajeCorrecto: "Reserva registrada correctamente.",
+    });
   };
 
   const actualizarReserva = async (idReserva, reservaActualizada) => {
-    try {
-      const respuesta = await fetch(
-        `http://localhost:3001/reservas/${idReserva}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            nombre: reservaActualizada.nombre,
-            telefono: reservaActualizada.telefono,
-            fecha: reservaActualizada.fecha,
-            hora: reservaActualizada.hora,
-            personas: Number(reservaActualizada.personas),
-            mesa: reservaActualizada.mesa,
-            comentario: reservaActualizada.comentario,
-            estado: reservaActualizada.estado,
-          }),
-        },
-      );
-
-      const data = await respuesta.json();
-
-      if (!respuesta.ok) {
-        setMensaje(data.mensaje || "Error al actualizar la reserva.");
-        return false;
-      }
-
-      setMensaje(data.mensaje || "Reserva actualizada correctamente.");
-
-      // Esta línea actualiza Reportes, Calendario y Gestión
-      await cargarReservas();
-
-      return true;
-    } catch (error) {
-      console.log("Error al actualizar reserva:", error);
-      setMensaje("No se pudo conectar con el servidor.");
-      return false;
-    }
+    return enviarReserva({
+      url: `${API_RESERVAS}/${idReserva}`,
+      metodo: "PUT",
+      datos: prepararReserva(reservaActualizada),
+      mensajeError: "Error al actualizar la reserva.",
+      mensajeCorrecto: "Reserva actualizada correctamente.",
+    });
   };
 
   const eliminarReserva = async (idReserva) => {
-    try {
-      const respuesta = await fetch(
-        `http://localhost:3001/reservas/${idReserva}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      const data = await respuesta.json();
-
-      if (!respuesta.ok) {
-        setMensaje(data.mensaje || "Error al eliminar la reserva.");
-        return;
-      }
-
-      setMensaje(data.mensaje || "Reserva eliminada correctamente.");
-      await cargarReservas();
-    } catch (error) {
-      console.log("Error al eliminar reserva:", error);
-      setMensaje("No se pudo conectar con el servidor.");
-    }
+    return enviarReserva({
+      url: `${API_RESERVAS}/${idReserva}`,
+      metodo: "DELETE",
+      mensajeError: "Error al eliminar la reserva.",
+      mensajeCorrecto: "Reserva eliminada correctamente.",
+    });
   };
 
   const cerrarMensaje = () => {
