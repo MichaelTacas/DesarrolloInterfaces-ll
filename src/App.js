@@ -82,8 +82,17 @@ const App = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(reservaActualizada),
-        }
+          body: JSON.stringify({
+            nombre: reservaActualizada.nombre,
+            telefono: reservaActualizada.telefono,
+            fecha: reservaActualizada.fecha,
+            hora: reservaActualizada.hora,
+            personas: Number(reservaActualizada.personas),
+            mesa: reservaActualizada.mesa,
+            comentario: reservaActualizada.comentario,
+            estado: reservaActualizada.estado,
+          }),
+        },
       );
 
       const data = await respuesta.json();
@@ -94,7 +103,10 @@ const App = () => {
       }
 
       setMensaje(data.mensaje || "Reserva actualizada correctamente.");
+
+      // Esta línea actualiza Reportes, Calendario y Gestión
       await cargarReservas();
+
       return true;
     } catch (error) {
       console.log("Error al actualizar reserva:", error);
@@ -109,7 +121,7 @@ const App = () => {
         `http://localhost:3001/reservas/${idReserva}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       const data = await respuesta.json();

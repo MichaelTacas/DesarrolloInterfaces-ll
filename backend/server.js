@@ -58,7 +58,7 @@ app.post("/usuarios", (req, res) => {
       res.json({
         mensaje: "Usuario registrado correctamente.",
       });
-    }
+    },
   );
 });
 
@@ -158,7 +158,7 @@ app.post("/reservas", (req, res) => {
       res.json({
         mensaje: "Reserva registrada correctamente.",
       });
-    }
+    },
   );
 });
 
@@ -179,9 +179,8 @@ app.get("/reservas", (req, res) => {
       comentario,
       estado,
       fecha_registro
-    FROM reserva
-    WHERE estado = 'Activa'
-    ORDER BY fecha ASC, hora ASC
+      FROM reserva
+      ORDER BY fecha ASC, hora ASC
   `;
 
   conexion.query(sql, (error, resultados) => {
@@ -231,16 +230,8 @@ app.delete("/reservas/:id", (req, res) => {
 app.put("/reservas/:id", (req, res) => {
   const { id } = req.params;
 
-  const {
-    nombre,
-    telefono,
-    fecha,
-    hora,
-    personas,
-    mesa,
-    comentario,
-    estado,
-  } = req.body;
+  const { nombre, telefono, fecha, hora, personas, mesa, comentario, estado } =
+    req.body;
 
   const sql = `
     UPDATE reserva
@@ -289,7 +280,7 @@ app.put("/reservas/:id", (req, res) => {
       res.json({
         mensaje: "Reserva actualizada correctamente.",
       });
-    }
+    },
   );
 });
 
