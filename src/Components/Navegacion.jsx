@@ -13,6 +13,44 @@ const Navegacion = () => {
     window.location.href = "/";
   };
 
+  const claseNav = ({ isActive }) =>
+    isActive
+      ? "nav-link nav-link-restaurante activo"
+      : "nav-link nav-link-restaurante";
+
+  const enlacesCliente = [
+    {
+      texto: "Inicio",
+      ruta: "/",
+      end: true,
+    },
+    {
+      texto: "Especialidades",
+      ruta: "/servicios",
+    },
+    {
+      texto: "Reservar",
+      ruta: usuarioActivo ? "/reservas" : "/login",
+    },
+    {
+      texto: "Calendario",
+      ruta: "/calendario",
+    },
+  ];
+
+  const enlacesAdministrador = [
+    {
+      texto: "Reportes",
+      ruta: "/lista-reservas",
+    },
+    {
+      texto: "Gestión",
+      ruta: "/gestion-admin",
+    },
+  ];
+
+  const enlacesMenu = esAdministrador ? enlacesAdministrador : enlacesCliente;
+
   return (
     <nav
       className={
@@ -40,78 +78,16 @@ const Navegacion = () => {
 
         <div className="collapse navbar-collapse" id="menuRestaurante">
           <div className="navbar-nav ms-auto menu-links">
-            {esAdministrador ? (
-              <>
-                <NavLink
-                  to="/lista-reservas"
-                  className={({ isActive }) =>
-                    isActive
-                      ? "nav-link nav-link-restaurante activo"
-                      : "nav-link nav-link-restaurante"
-                  }
-                >
-                  Reportes
-                </NavLink>
-
-                <NavLink
-                  to="/gestion-admin"
-                  className={({ isActive }) =>
-                    isActive
-                      ? "nav-link nav-link-restaurante activo"
-                      : "nav-link nav-link-restaurante"
-                  }
-                >
-                  Gestión
-                </NavLink>
-              </>
-            ) : (
-              <>
-                <NavLink
-                  to="/"
-                  end
-                  className={({ isActive }) =>
-                    isActive
-                      ? "nav-link nav-link-restaurante activo"
-                      : "nav-link nav-link-restaurante"
-                  }
-                >
-                  Inicio
-                </NavLink>
-
-                <NavLink
-                  to="/servicios"
-                  className={({ isActive }) =>
-                    isActive
-                      ? "nav-link nav-link-restaurante activo"
-                      : "nav-link nav-link-restaurante"
-                  }
-                >
-                  Especialidades
-                </NavLink>
-
-                <NavLink
-                  to={usuarioActivo ? "/reservas" : "/login"}
-                  className={({ isActive }) =>
-                    isActive
-                      ? "nav-link nav-link-restaurante activo"
-                      : "nav-link nav-link-restaurante"
-                  }
-                >
-                  Reservar
-                </NavLink>
-
-                <NavLink
-                  to="/calendario"
-                  className={({ isActive }) =>
-                    isActive
-                      ? "nav-link nav-link-restaurante activo"
-                      : "nav-link nav-link-restaurante"
-                  }
-                >
-                  Calendario
-                </NavLink>
-              </>
-            )}
+            {enlacesMenu.map((enlace) => (
+              <NavLink
+                key={enlace.texto}
+                to={enlace.ruta}
+                end={enlace.end}
+                className={claseNav}
+              >
+                {enlace.texto}
+              </NavLink>
+            ))}
 
             {usuarioActivo ? (
               <div className="nav-usuario-activo">
@@ -132,30 +108,16 @@ const Navegacion = () => {
                 </div>
               </div>
             ) : (
-              <NavLink
-                to="/login"
-                className={({ isActive }) =>
-                  isActive
-                    ? "nav-link nav-link-restaurante login-link activo"
-                    : "nav-link nav-link-restaurante login-link"
-                }
-              >
-                <span className="login-icono">👤</span>
-                <span>Iniciar sesión</span>
-              </NavLink>
-            )}
+              <>
+                <NavLink to="/login" className={claseNav}>
+                  <span className="login-icono">👤</span>
+                  <span>Iniciar sesión</span>
+                </NavLink>
 
-            {!usuarioActivo && !esAdministrador && (
-              <NavLink
-                to="/contacto"
-                className={({ isActive }) =>
-                  isActive
-                    ? "nav-link nav-link-restaurante activo"
-                    : "nav-link nav-link-restaurante"
-                }
-              >
-                Contacto
-              </NavLink>
+                <NavLink to="/contacto" className={claseNav}>
+                  Contacto
+                </NavLink>
+              </>
             )}
           </div>
         </div>
