@@ -7,6 +7,66 @@ import ReservaAmbiente from "../img_reservar/ReservaAmbiente.png";
 import ReservaChef from "../img_reservar/ReservaChef.png";
 import ReservaPlato from "../img_reservar/ReservaPlato.png";
 
+const horasDisponibles = [
+  "12:00",
+  "13:00",
+  "14:00",
+  "15:00",
+  "16:00",
+  "17:00",
+  "18:00",
+  "19:00",
+  "20:00",
+  "21:00",
+  "22:00",
+];
+
+const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6"];
+
+const personas = [
+  { valor: "1", texto: "1 persona" },
+  { valor: "2", texto: "2 personas" },
+  { valor: "3", texto: "3 personas" },
+  { valor: "4", texto: "4 personas" },
+  { valor: "5", texto: "5 personas" },
+  { valor: "6", texto: "6 personas" },
+];
+
+const beneficios = [
+  {
+    titulo: "Ambiente acogedor",
+    descripcion: "Disfruta tu reserva en un espacio cálido y familiar.",
+    imagen: ReservaAmbiente,
+  },
+  {
+    titulo: "Atención preparada",
+    descripcion: "Nuestro equipo organiza mejor cada reserva registrada.",
+    imagen: ReservaChef,
+  },
+  {
+    titulo: "Sabor criollo",
+    descripcion: "Acompaña tu visita con platos tradicionales peruanos.",
+    imagen: ReservaPlato,
+  },
+];
+
+const informacionExtra = [
+  {
+    titulo: "Horario",
+    descripcion: "Lunes a domingo de 12:00 p.m. a 10:00 p.m.",
+  },
+  {
+    titulo: "Tolerancia",
+    descripcion: "La reserva tendrá una tolerancia de 15 minutos.",
+  },
+  {
+    titulo: "Disponibilidad",
+    descripcion: "Revisa las mesas disponibles antes de elegir tu horario.",
+    enlace: "/calendario",
+    textoEnlace: "Ver calendario",
+  },
+];
+
 const Reservas = ({ agregarReserva, mensaje = "", cerrarMensaje }) => {
   const navigate = useNavigate();
 
@@ -14,21 +74,7 @@ const Reservas = ({ agregarReserva, mensaje = "", cerrarMensaje }) => {
   const esAdministrador = usuarioActivo?.rol === "Administrador";
   const esCliente = usuarioActivo && !esAdministrador;
 
-  const horasDisponibles = [
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
-    "19:00",
-    "20:00",
-    "21:00",
-    "22:00",
-  ];
-
-  const [reserva, setReserva] = useState({
+  const obtenerReservaInicial = () => ({
     nombre: esCliente ? usuarioActivo.nombres : "",
     telefono: esCliente ? usuarioActivo.telefono : "",
     fecha: "",
@@ -38,23 +84,7 @@ const Reservas = ({ agregarReserva, mensaje = "", cerrarMensaje }) => {
     comentario: "",
   });
 
-  const beneficios = [
-    {
-      titulo: "Ambiente acogedor",
-      descripcion: "Disfruta tu reserva en un espacio cálido y familiar.",
-      imagen: ReservaAmbiente,
-    },
-    {
-      titulo: "Atención preparada",
-      descripcion: "Nuestro equipo organiza mejor cada reserva registrada.",
-      imagen: ReservaChef,
-    },
-    {
-      titulo: "Sabor criollo",
-      descripcion: "Acompaña tu visita con platos tradicionales peruanos.",
-      imagen: ReservaPlato,
-    },
-  ];
+  const [reserva, setReserva] = useState(obtenerReservaInicial);
 
   useEffect(() => {
     if (!usuarioActivo) {
@@ -76,15 +106,7 @@ const Reservas = ({ agregarReserva, mensaje = "", cerrarMensaje }) => {
   };
 
   const limpiarReserva = () => {
-    setReserva({
-      nombre: esCliente ? usuarioActivo.nombres : "",
-      telefono: esCliente ? usuarioActivo.telefono : "",
-      fecha: "",
-      hora: "",
-      personas: "",
-      mesa: "",
-      comentario: "",
-    });
+    setReserva(obtenerReservaInicial());
   };
 
   const handleSubmit = async (e) => {
@@ -101,6 +123,119 @@ const Reservas = ({ agregarReserva, mensaje = "", cerrarMensaje }) => {
     if (reservaRegistrada) {
       limpiarReserva();
     }
+  };
+
+  const camposFormulario = [
+    ...(!esCliente
+      ? [
+          {
+            name: "nombre",
+            label: "Nombre del cliente",
+            tipo: "text",
+            placeholder: "Ej: Juan Pérez",
+          },
+          {
+            name: "telefono",
+            label: "Teléfono",
+            tipo: "text",
+            placeholder: "Ej: 999999999",
+          },
+        ]
+      : []),
+    {
+      name: "fecha",
+      label: "Fecha",
+      tipo: "date",
+    },
+    {
+      name: "hora",
+      label: "Hora",
+      tipo: "select",
+      placeholder: "Seleccionar hora",
+      opciones: horasDisponibles.map((hora) => ({
+        valor: hora,
+        texto: hora,
+      })),
+    },
+    {
+      name: "personas",
+      label: "Cantidad de personas",
+      tipo: "select",
+      placeholder: "Seleccionar",
+      opciones: personas,
+    },
+    {
+      name: "mesa",
+      label: "Mesa",
+      tipo: "select",
+      placeholder: "Seleccionar mesa",
+      opciones: mesas.map((mesa) => ({
+        valor: mesa,
+        texto: mesa,
+      })),
+    },
+    {
+      name: "comentario",
+      label: "Comentario opcional",
+      tipo: "textarea",
+      placeholder:
+        "Ej: Mesa cerca a la ventana, cumpleaños, silla para niño, etc.",
+      col: "col-12 mb-3",
+      required: false,
+    },
+  ];
+
+  const renderCampo = (campo) => {
+    const requerido = campo.required !== false;
+
+    return (
+      <div className={campo.col || "col-md-6 mb-3"} key={campo.name}>
+        <label htmlFor={campo.name} className="form-label">
+          {campo.label}
+        </label>
+
+        {campo.tipo === "select" ? (
+          <select
+            id={campo.name}
+            name={campo.name}
+            className="form-select"
+            value={reserva[campo.name]}
+            onChange={handleChange}
+            required={requerido}
+          >
+            <option value="">{campo.placeholder}</option>
+
+            {campo.opciones.map((opcion) => (
+              <option key={opcion.valor} value={opcion.valor}>
+                {opcion.texto}
+              </option>
+            ))}
+          </select>
+        ) : campo.tipo === "textarea" ? (
+          <textarea
+            id={campo.name}
+            name={campo.name}
+            className="form-control"
+            rows="3"
+            placeholder={campo.placeholder}
+            value={reserva[campo.name]}
+            onChange={handleChange}
+            required={requerido}
+          ></textarea>
+        ) : (
+          <input
+            id={campo.name}
+            type={campo.tipo}
+            name={campo.name}
+            className="form-control"
+            placeholder={campo.placeholder || ""}
+            value={reserva[campo.name]}
+            onChange={handleChange}
+            required={requerido}
+          />
+        )}
+      </div>
+    );
   };
 
   return (
@@ -185,146 +320,7 @@ const Reservas = ({ agregarReserva, mensaje = "", cerrarMensaje }) => {
                 )}
 
                 <form onSubmit={handleSubmit}>
-                  <div className="row">
-                    {!esCliente && (
-                      <>
-                        <div className="col-md-6 mb-3">
-                          <label htmlFor="nombre" className="form-label">
-                            Nombre del cliente
-                          </label>
-
-                          <input
-                            id="nombre"
-                            type="text"
-                            name="nombre"
-                            className="form-control"
-                            placeholder="Ej: Juan Pérez"
-                            value={reserva.nombre}
-                            onChange={handleChange}
-                            required
-                          />
-                        </div>
-
-                        <div className="col-md-6 mb-3">
-                          <label htmlFor="telefono" className="form-label">
-                            Teléfono
-                          </label>
-
-                          <input
-                            id="telefono"
-                            type="text"
-                            name="telefono"
-                            className="form-control"
-                            placeholder="Ej: 999999999"
-                            value={reserva.telefono}
-                            onChange={handleChange}
-                            required
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="fecha" className="form-label">
-                        Fecha
-                      </label>
-
-                      <input
-                        id="fecha"
-                        type="date"
-                        name="fecha"
-                        className="form-control"
-                        value={reserva.fecha}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="hora" className="form-label">
-                        Hora
-                      </label>
-
-                      <select
-                        id="hora"
-                        name="hora"
-                        className="form-select"
-                        value={reserva.hora}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="">Seleccionar hora</option>
-
-                        {horasDisponibles.map((hora) => (
-                          <option value={hora} key={hora}>
-                            {hora}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="personas" className="form-label">
-                        Cantidad de personas
-                      </label>
-
-                      <select
-                        id="personas"
-                        name="personas"
-                        className="form-select"
-                        value={reserva.personas}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="">Seleccionar</option>
-                        <option value="1">1 persona</option>
-                        <option value="2">2 personas</option>
-                        <option value="3">3 personas</option>
-                        <option value="4">4 personas</option>
-                        <option value="5">5 personas</option>
-                        <option value="6">6 personas</option>
-                      </select>
-                    </div>
-
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="mesa" className="form-label">
-                        Mesa
-                      </label>
-
-                      <select
-                        id="mesa"
-                        name="mesa"
-                        className="form-select"
-                        value={reserva.mesa}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="">Seleccionar mesa</option>
-                        <option value="Mesa 1">Mesa 1</option>
-                        <option value="Mesa 2">Mesa 2</option>
-                        <option value="Mesa 3">Mesa 3</option>
-                        <option value="Mesa 4">Mesa 4</option>
-                        <option value="Mesa 5">Mesa 5</option>
-                        <option value="Mesa 6">Mesa 6</option>
-                      </select>
-                    </div>
-
-                    <div className="col-12 mb-3">
-                      <label htmlFor="comentario" className="form-label">
-                        Comentario opcional
-                      </label>
-
-                      <textarea
-                        id="comentario"
-                        name="comentario"
-                        className="form-control"
-                        rows="3"
-                        placeholder="Ej: Mesa cerca a la ventana, cumpleaños, silla para niño, etc."
-                        value={reserva.comentario}
-                        onChange={handleChange}
-                      ></textarea>
-                    </div>
-                  </div>
+                  <div className="row">{camposFormulario.map(renderCampo)}</div>
 
                   <button type="submit" className="btn btn-danger reservas-btn">
                     Confirmar reserva
@@ -358,7 +354,6 @@ const Reservas = ({ agregarReserva, mensaje = "", cerrarMensaje }) => {
 
                     <div className="reservas-beneficio-info">
                       <h4>{item.titulo}</h4>
-
                       <p>{item.descripcion}</p>
                     </div>
                   </div>
@@ -369,35 +364,24 @@ const Reservas = ({ agregarReserva, mensaje = "", cerrarMensaje }) => {
 
           <div className="reservas-info-extra">
             <div className="row g-4">
-              <div className="col-md-4">
-                <div className="reservas-info-card">
-                  <h4>Horario</h4>
+              {informacionExtra.map((item) => (
+                <div className="col-md-4" key={item.titulo}>
+                  <div className="reservas-info-card">
+                    <h4>{item.titulo}</h4>
 
-                  <p>Lunes a domingo de 12:00 p.m. a 10:00 p.m.</p>
+                    <p>{item.descripcion}</p>
+
+                    {item.enlace && (
+                      <Link
+                        to={item.enlace}
+                        className="reservas-link-calendario"
+                      >
+                        {item.textoEnlace}
+                      </Link>
+                    )}
+                  </div>
                 </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="reservas-info-card">
-                  <h4>Tolerancia</h4>
-
-                  <p>La reserva tendrá una tolerancia de 15 minutos.</p>
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="reservas-info-card">
-                  <h4>Disponibilidad</h4>
-
-                  <p>
-                    Revisa las mesas disponibles antes de elegir tu horario.
-                  </p>
-
-                  <Link to="/calendario" className="reservas-link-calendario">
-                    Ver calendario
-                  </Link>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
