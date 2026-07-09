@@ -1,126 +1,199 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
-const ListaReservas = ({ reservas = [], eliminarReserva }) => {
-  const [filtroMesa, setFiltroMesa] = useState("");
-  const [filtroCliente, setFiltroCliente] = useState("");
-  const [filtroFecha, setFiltroFecha] = useState("");
+const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6"];
 
-  const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4", "Mesa 5", "Mesa 6"];
-  const totalMesasSistema = mesas.length;
+const filtrosIniciales = {
+  mesa: "",
+  cliente: "",
+  fecha: "",
+};
 
-  const clientesUnicos = Object.values(
-    reservas.reduce((acumulador, reserva) => {
-      const clave = reserva.telefono || reserva.nombre;
+const tarjetasReporte = [
+  {
+    titulo: "Reservas por fecha",
+    descripcion:
+      "Permite revisar cuántas reservas existen por cada día de atención.",
+  },
+  {
+    titulo: "Mesas ocupadas",
+    descripcion: "Ayuda a identificar qué mesas tienen reservas registradas.",
+  },
+  {
+    titulo: "Reservas por horario",
+    descripcion:
+      "Permite controlar los horarios con mayor demanda de reservas.",
+  },
+  {
+    titulo: "Clientes registrados",
+    descripcion:
+      "Muestra los clientes que realizaron reservas en el sistema.",
+  },
+];
+
+const agruparDatos = (lista, obtenerClave, crearItem, actualizarItem) => {
+  return Object.values(
+    lista.reduce((acumulador, reserva) => {
+      const clave = obtenerClave(reserva);
 
       if (!acumulador[clave]) {
-        acumulador[clave] = {
-          nombre: reserva.nombre,
-          telefono: reserva.telefono,
-        };
+        acumulador[clave] = crearItem(reserva);
       }
+
+      actualizarItem(acumulador[clave], reserva);
 
       return acumulador;
     }, {})
   );
+};
 
-  const reservasFiltradas = reservas.filter((reserva) => {
-    const coincideMesa = filtroMesa === "" || reserva.mesa === filtroMesa;
+const ListaReservas = ({ reservas = [], eliminarReserva }) => {
+  const [filtros, setFiltros] = useState(filtrosIniciales);
 
-    const coincideCliente =
-      filtroCliente === "" ||
-      reserva.nombre.toLowerCase().includes(filtroCliente.toLowerCase()) ||
-      reserva.telefono.includes(filtroCliente);
+  const actualizarFiltro = (e) => {
+    const { name, value } = e.target;
 
-    const coincideFecha = filtroFecha === "" || reserva.fecha === filtroFecha;
-
-    return coincideMesa && coincideCliente && coincideFecha;
-  });
-
-  const totalReservas = reservasFiltradas.length;
-
-  const mesasRegistradas = new Set(
-    reservasFiltradas.map((reserva) => reserva.mesa)
-  ).size;
-
-  const clientesRegistrados = new Set(
-    reservasFiltradas.map((reserva) => reserva.telefono)
-  ).size;
-
-  const horariosRegistrados = new Set(
-    reservasFiltradas.map((reserva) => reserva.hora)
-  ).size;
-
-  const limpiarFiltros = () => {
-    setFiltroMesa("");
-    setFiltroCliente("");
-    setFiltroFecha("");
+    setFiltros({
+      ...filtros,
+      [name]: value,
+    });
   };
 
-  const reservasPorFecha = Object.values(
-    reservasFiltradas.reduce((acumulador, reserva) => {
-      const fecha = reserva.fecha;
+  const limpiarFiltros = () => {
+    setFiltros(filtrosIniciales);
+  };
 
-      if (!acumulador[fecha]) {
-        acumulador[fecha] = {
-          fecha,
-          total: 0,
-          personas: 0,
-        };
-      }
+  const clientesUnicos = useMemo(() => {
+    return Object.values(
+      reservas.reduce((acumulador, reserva) => {
+        const clave = reserva.telefono || reserva.nombre;
 
-      acumulador[fecha].total += 1;
-      acumulador[fecha].personas += Number(reserva.personas);
+        if (!acumulador[clave]) {
+          acumulador[clave] = {
+            nombre: reserva.nombre,
+            telefono: reserva.telefono,
+          };
+        }
 
-      return acumulador;
-    }, {})
+        return acumulador;
+      }, {})
+    );
+  }, [reservas]);
+
+  const reservasFiltradas = useMemo(() => {
+    return reservas.filter((reserva) => {
+      const nombre = reserva.nombre || "";
+      const telefono = reserva.telefono || "";
+
+      const coincideMesa =
+        filtros.mesa === "" || reserva.mesa === filtros.mesa;
+
+      const coincideCliente =
+        filtros.cliente === "" ||
+        nombre.toLowerCase().includes(filtros.cliente.toLowerCase()) ||
+        telefono.includes(filtros.cliente);
+
+      const coincideFecha =
+        filtros.fecha === "" || reserva.fecha === filtros.fecha;
+
+      return coincideMesa && coincideCliente && coincideFecha;
+    });
+  }, [reservas, filtros]);
+
+  const resumen = [
+    {
+      titulo: "Total de reservas",
+      valor: reservasFiltradas.length,
+      descripcion: "Reservas según los filtros aplicados",
+    },
+    {
+      titulo: "Mesas usadas",
+      valor: new Set(reservasFiltradas.map((reserva) => reserva.mesa)).size,
+      descripcion: `De ${mesas.length} mesas del restaurante`,
+    },
+    {
+      titulo: "Clientes",
+      valor: new Set(reservasFiltradas.map((reserva) => reserva.telefono)).size,
+      descripcion: "Clientes encontrados en el filtro",
+    },
+    {
+      titulo: "Horarios",
+      valor: new Set(reservasFiltradas.map((reserva) => reserva.hora)).size,
+      descripcion: "Horarios usados en reservas",
+    },
+  ];
+
+  const reservasPorFecha = agruparDatos(
+    reservasFiltradas,
+    (reserva) => reserva.fecha,
+    (reserva) => ({
+      fecha: reserva.fecha,
+      total: 0,
+      personas: 0,
+    }),
+    (item, reserva) => {
+      item.total += 1;
+      item.personas += Number(reserva.personas);
+    }
   );
 
   const reporteMesas = mesas.map((mesa) => {
-    const reservasMesa = reservasFiltradas.filter(
+    const total = reservasFiltradas.filter(
       (reserva) => reserva.mesa === mesa
-    );
+    ).length;
 
     return {
       mesa,
-      total: reservasMesa.length,
-      estado: reservasMesa.length > 0 ? "Con reservas" : "Sin reservas",
+      total,
+      estado: total > 0 ? "Con reservas" : "Sin reservas",
     };
   });
 
-  const reservasPorHorario = Object.values(
-    reservasFiltradas.reduce((acumulador, reserva) => {
-      const hora = reserva.hora;
-
-      if (!acumulador[hora]) {
-        acumulador[hora] = {
-          hora,
-          total: 0,
-        };
-      }
-
-      acumulador[hora].total += 1;
-
-      return acumulador;
-    }, {})
+  const reservasPorHorario = agruparDatos(
+    reservasFiltradas,
+    (reserva) => reserva.hora,
+    (reserva) => ({
+      hora: reserva.hora,
+      total: 0,
+    }),
+    (item) => {
+      item.total += 1;
+    }
   );
 
-  const clientesConReservas = Object.values(
-    reservasFiltradas.reduce((acumulador, reserva) => {
-      const telefono = reserva.telefono;
-
-      if (!acumulador[telefono]) {
-        acumulador[telefono] = {
-          nombre: reserva.nombre,
-          telefono: reserva.telefono,
-          total: 0,
-        };
-      }
-
-      acumulador[telefono].total += 1;
-
-      return acumulador;
-    }, {})
+  const clientesConReservas = agruparDatos(
+    reservasFiltradas,
+    (reserva) => reserva.telefono,
+    (reserva) => ({
+      nombre: reserva.nombre,
+      telefono: reserva.telefono,
+      total: 0,
+    }),
+    (item) => {
+      item.total += 1;
+    }
   );
+
+  const renderTablaReporte = (columnas, datos, obtenerFilas) => {
+    if (datos.length === 0) {
+      return <p className="reporte-vacio">Sin datos registrados.</p>;
+    }
+
+    return (
+      <div className="table-responsive">
+        <table className="table reporte-mini-tabla">
+          <thead>
+            <tr>
+              {columnas.map((columna) => (
+                <th key={columna}>{columna}</th>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>{datos.map(obtenerFilas)}</tbody>
+        </table>
+      </div>
+    );
+  };
 
   return (
     <div className="lista-page">
@@ -163,9 +236,10 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
 
                 <select
                   id="filtroMesa"
+                  name="mesa"
                   className="form-select"
-                  value={filtroMesa}
-                  onChange={(e) => setFiltroMesa(e.target.value)}
+                  value={filtros.mesa}
+                  onChange={actualizarFiltro}
                 >
                   <option value="">Todas las mesas</option>
 
@@ -184,20 +258,18 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
 
                 <input
                   id="filtroCliente"
+                  name="cliente"
                   type="text"
                   className="form-control"
                   placeholder="Nombre o teléfono"
-                  value={filtroCliente}
-                  onChange={(e) => setFiltroCliente(e.target.value)}
+                  value={filtros.cliente}
+                  onChange={actualizarFiltro}
                   list="clientesReservas"
                 />
 
                 <datalist id="clientesReservas">
                   {clientesUnicos.map((cliente) => (
-                    <option
-                      key={cliente.telefono}
-                      value={cliente.nombre}
-                    >
+                    <option key={cliente.telefono} value={cliente.nombre}>
                       {cliente.telefono}
                     </option>
                   ))}
@@ -211,10 +283,11 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
 
                 <input
                   id="filtroFecha"
+                  name="fecha"
                   type="date"
                   className="form-control"
-                  value={filtroFecha}
-                  onChange={(e) => setFiltroFecha(e.target.value)}
+                  value={filtros.fecha}
+                  onChange={actualizarFiltro}
                 />
               </div>
             </div>
@@ -226,37 +299,15 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
           </div>
 
           <div className="row g-4 mb-5">
-            <div className="col-md-3 col-sm-6">
-              <div className="lista-resumen-card">
-                <span>Total de reservas</span>
-                <h3>{totalReservas}</h3>
-                <p>Reservas según los filtros aplicados</p>
+            {resumen.map((item) => (
+              <div className="col-md-3 col-sm-6" key={item.titulo}>
+                <div className="lista-resumen-card">
+                  <span>{item.titulo}</span>
+                  <h3>{item.valor}</h3>
+                  <p>{item.descripcion}</p>
+                </div>
               </div>
-            </div>
-
-            <div className="col-md-3 col-sm-6">
-              <div className="lista-resumen-card">
-                <span>Mesas usadas</span>
-                <h3>{mesasRegistradas}</h3>
-                <p>De {totalMesasSistema} mesas del restaurante</p>
-              </div>
-            </div>
-
-            <div className="col-md-3 col-sm-6">
-              <div className="lista-resumen-card">
-                <span>Clientes</span>
-                <h3>{clientesRegistrados}</h3>
-                <p>Clientes encontrados en el filtro</p>
-              </div>
-            </div>
-
-            <div className="col-md-3 col-sm-6">
-              <div className="lista-resumen-card">
-                <span>Horarios</span>
-                <h3>{horariosRegistrados}</h3>
-                <p>Horarios usados en reservas</p>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="lista-card-principal">
@@ -289,6 +340,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
                       <th>Hora</th>
                       <th>Mesa</th>
                       <th>Personas</th>
+                      <th>Estado</th>
                       <th>Comentario</th>
                       <th>Acción</th>
                     </tr>
@@ -296,7 +348,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
 
                   <tbody>
                     {reservasFiltradas.map((reserva, index) => (
-                      <tr key={reserva.id_reserva || reserva.telefono}>
+                      <tr key={reserva.id_reserva}>
                         <td>{index + 1}</td>
                         <td>{reserva.nombre}</td>
                         <td>{reserva.telefono}</td>
@@ -304,6 +356,7 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
                         <td>{reserva.hora}</td>
                         <td>{reserva.mesa}</td>
                         <td>{reserva.personas}</td>
+                        <td>{reserva.estado}</td>
                         <td>{reserva.comentario || "Sin comentario"}</td>
                         <td>
                           <button
@@ -325,161 +378,77 @@ const ListaReservas = ({ reservas = [], eliminarReserva }) => {
             <h2>Reportes administrativos</h2>
 
             <div className="row g-4 mb-5">
-              <div className="col-md-3 col-sm-6">
-                <div className="reporte-card">
-                  <h4>Reservas por fecha</h4>
-
-                  <p>
-                    Permite revisar cuántas reservas existen por cada día de
-                    atención.
-                  </p>
+              {tarjetasReporte.map((tarjeta) => (
+                <div className="col-md-3 col-sm-6" key={tarjeta.titulo}>
+                  <div className="reporte-card">
+                    <h4>{tarjeta.titulo}</h4>
+                    <p>{tarjeta.descripcion}</p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="col-md-3 col-sm-6">
-                <div className="reporte-card">
-                  <h4>Mesas ocupadas</h4>
-
-                  <p>
-                    Ayuda a identificar qué mesas tienen reservas registradas.
-                  </p>
-                </div>
-              </div>
-
-              <div className="col-md-3 col-sm-6">
-                <div className="reporte-card">
-                  <h4>Reservas por horario</h4>
-
-                  <p>
-                    Permite controlar los horarios con mayor demanda de
-                    reservas.
-                  </p>
-                </div>
-              </div>
-
-              <div className="col-md-3 col-sm-6">
-                <div className="reporte-card">
-                  <h4>Clientes registrados</h4>
-
-                  <p>
-                    Muestra los clientes que realizaron reservas en el sistema.
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
 
             <div className="reportes-detalle-grid">
               <div className="reporte-detalle-card">
                 <h3>1. Reporte de reservas por fecha</h3>
 
-                {reservasPorFecha.length === 0 ? (
-                  <p className="reporte-vacio">Sin datos registrados.</p>
-                ) : (
-                  <div className="table-responsive">
-                    <table className="table reporte-mini-tabla">
-                      <thead>
-                        <tr>
-                          <th>Fecha</th>
-                          <th>Total reservas</th>
-                          <th>Total personas</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-                        {reservasPorFecha.map((item) => (
-                          <tr key={item.fecha}>
-                            <td>{item.fecha}</td>
-                            <td>{item.total}</td>
-                            <td>{item.personas}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                {renderTablaReporte(
+                  ["Fecha", "Total reservas", "Total personas"],
+                  reservasPorFecha,
+                  (item) => (
+                    <tr key={item.fecha}>
+                      <td>{item.fecha}</td>
+                      <td>{item.total}</td>
+                      <td>{item.personas}</td>
+                    </tr>
+                  )
                 )}
               </div>
 
               <div className="reporte-detalle-card">
                 <h3>2. Reporte de mesas ocupadas</h3>
 
-                <div className="table-responsive">
-                  <table className="table reporte-mini-tabla">
-                    <thead>
-                      <tr>
-                        <th>Mesa</th>
-                        <th>Reservas</th>
-                        <th>Estado</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {reporteMesas.map((item) => (
-                        <tr key={item.mesa}>
-                          <td>{item.mesa}</td>
-                          <td>{item.total}</td>
-                          <td>{item.estado}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {renderTablaReporte(
+                  ["Mesa", "Reservas", "Estado"],
+                  reporteMesas,
+                  (item) => (
+                    <tr key={item.mesa}>
+                      <td>{item.mesa}</td>
+                      <td>{item.total}</td>
+                      <td>{item.estado}</td>
+                    </tr>
+                  )
+                )}
               </div>
 
               <div className="reporte-detalle-card">
                 <h3>3. Reporte de reservas por horario</h3>
 
-                {reservasPorHorario.length === 0 ? (
-                  <p className="reporte-vacio">Sin datos registrados.</p>
-                ) : (
-                  <div className="table-responsive">
-                    <table className="table reporte-mini-tabla">
-                      <thead>
-                        <tr>
-                          <th>Hora</th>
-                          <th>Total reservas</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-                        {reservasPorHorario.map((item) => (
-                          <tr key={item.hora}>
-                            <td>{item.hora}</td>
-                            <td>{item.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                {renderTablaReporte(
+                  ["Hora", "Total reservas"],
+                  reservasPorHorario,
+                  (item) => (
+                    <tr key={item.hora}>
+                      <td>{item.hora}</td>
+                      <td>{item.total}</td>
+                    </tr>
+                  )
                 )}
               </div>
 
               <div className="reporte-detalle-card">
                 <h3>4. Reporte de clientes registrados</h3>
 
-                {clientesConReservas.length === 0 ? (
-                  <p className="reporte-vacio">Sin datos registrados.</p>
-                ) : (
-                  <div className="table-responsive">
-                    <table className="table reporte-mini-tabla">
-                      <thead>
-                        <tr>
-                          <th>Cliente</th>
-                          <th>Teléfono</th>
-                          <th>Reservas</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-                        {clientesConReservas.map((item) => (
-                          <tr key={item.telefono}>
-                            <td>{item.nombre}</td>
-                            <td>{item.telefono}</td>
-                            <td>{item.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                {renderTablaReporte(
+                  ["Cliente", "Teléfono", "Reservas"],
+                  clientesConReservas,
+                  (item) => (
+                    <tr key={item.telefono}>
+                      <td>{item.nombre}</td>
+                      <td>{item.telefono}</td>
+                      <td>{item.total}</td>
+                    </tr>
+                  )
                 )}
               </div>
             </div>
