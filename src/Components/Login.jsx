@@ -2,58 +2,101 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Inicio from "./Inicio";
 
+const usuarioInicial = {
+  nombres: "",
+  dni: "",
+  telefono: "",
+  correo: "",
+  contrasena: "",
+};
+
+const camposLogin = [
+  {
+    name: "correo",
+    label: "Correo",
+    type: "email",
+    placeholder: "Ej: jose@mail.com",
+  },
+  {
+    name: "contrasena",
+    label: "Contraseña",
+    type: "password",
+  },
+];
+
+const camposRegistro = [
+  {
+    name: "nombres",
+    label: "Nombres y apellidos",
+    type: "text",
+    placeholder: "Ej: Juan Pérez",
+  },
+  {
+    name: "dni",
+    label: "DNI",
+    type: "text",
+    placeholder: "Ej: 12345678",
+    inputMode: "numeric",
+    maxLength: "8",
+  },
+  {
+    name: "telefono",
+    label: "Teléfono",
+    type: "text",
+    placeholder: "Ej: 999999999",
+    inputMode: "numeric",
+    maxLength: "9",
+  },
+  {
+    name: "correo",
+    label: "Correo",
+    type: "email",
+    placeholder: "Ej: jose@mail.com",
+  },
+  {
+    name: "contrasena",
+    label: "Contraseña",
+    type: "password",
+  },
+];
+
 const Login = () => {
   const navigate = useNavigate();
-  const [modoRegistro, setModoRegistro] = useState(false);
 
-  const [usuario, setUsuario] = useState({
-    nombres: "",
-    dni: "",
-    telefono: "",
-    correo: "",
-    contrasena: "",
-  });
+  const [modoRegistro, setModoRegistro] = useState(false);
+  const [usuario, setUsuario] = useState(usuarioInicial);
+
+  const limpiarFormulario = () => {
+    setUsuario(usuarioInicial);
+  };
+
+  const cambiarModo = (registro) => {
+    limpiarFormulario();
+    setModoRegistro(registro);
+  };
+
+  const limpiarValorCampo = (name, value) => {
+    if (name === "dni") {
+      return value.replace(/\D/g, "").slice(0, 8);
+    }
+
+    if (name === "telefono") {
+      return value.replace(/\D/g, "").slice(0, 9);
+    }
+
+    if (name === "nombres") {
+      return value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    }
+
+    return value;
+  };
 
   const manejarCambio = (e) => {
     const { name, value } = e.target;
 
-    if (name === "dni") {
-      setUsuario({
-        ...usuario,
-        dni: value.replace(/\D/g, "").slice(0, 8),
-      });
-      return;
-    }
-
-    if (name === "telefono") {
-      setUsuario({
-        ...usuario,
-        telefono: value.replace(/\D/g, "").slice(0, 9),
-      });
-      return;
-    }
-
-    if (name === "nombres") {
-      setUsuario({
-        ...usuario,
-        nombres: value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""),
-      });
-      return;
-    }
-
     setUsuario({
       ...usuario,
-      [name]: value,
-    });
-  };
-
-  const limpiarFormulario = () => {
-    setUsuario({
-      nombres: "",
-      dni: "",
-      telefono: "",
-      correo: "",
-      contrasena: "",
+      [name]: limpiarValorCampo(name, value),
     });
   };
 
@@ -84,6 +127,23 @@ const Login = () => {
     return true;
   };
 
+  const enviarPeticion = async (url, datos) => {
+    const respuesta = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(datos),
+    });
+
+    const data = await respuesta.json();
+
+    return {
+      ok: respuesta.ok,
+      data,
+    };
+  };
+
   const registrarUsuario = async (e) => {
     e.preventDefault();
 
@@ -100,24 +160,18 @@ const Login = () => {
     };
 
     try {
-      const respuesta = await fetch("http://localhost:3001/usuarios", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(nuevoUsuario),
-      });
+      const { ok, data } = await enviarPeticion(
+        "http://localhost:3001/usuarios",
+        nuevoUsuario
+      );
 
-      const data = await respuesta.json();
-
-      if (!respuesta.ok) {
+      if (!ok) {
         alert(data.mensaje || "Error al registrar usuario.");
         return;
       }
 
       alert(data.mensaje || "Cuenta creada correctamente.");
-      setModoRegistro(false);
-      limpiarFormulario();
+      cambiarModo(false);
     } catch (error) {
       console.log("Error al conectar con el backend:", error);
       alert("No se pudo conectar con el servidor.");
@@ -128,20 +182,12 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const respuesta = await fetch("http://localhost:3001/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          correo: usuario.correo,
-          contrasena: usuario.contrasena,
-        }),
+      const { ok, data } = await enviarPeticion("http://localhost:3001/login", {
+        correo: usuario.correo,
+        contrasena: usuario.contrasena,
       });
 
-      const data = await respuesta.json();
-
-      if (!respuesta.ok) {
+      if (!ok) {
         alert(data.mensaje || "Correo o contraseña incorrectos.");
         return;
       }
@@ -151,7 +197,7 @@ const Login = () => {
       limpiarFormulario();
 
       if (data.usuario.rol === "Administrador") {
-        navigate("/calendario");
+        navigate("/lista-reservas");
       } else {
         navigate("/");
       }
@@ -160,6 +206,23 @@ const Login = () => {
       alert("No se pudo conectar con el servidor.");
     }
   };
+
+  const renderCampo = (campo) => (
+    <div className="login-grupo" key={campo.name}>
+      <label>{campo.label}</label>
+
+      <input
+        type={campo.type}
+        name={campo.name}
+        placeholder={campo.placeholder || ""}
+        value={usuario[campo.name]}
+        onChange={manejarCambio}
+        inputMode={campo.inputMode}
+        maxLength={campo.maxLength}
+        required
+      />
+    </div>
+  );
 
   return (
     <>
@@ -176,28 +239,7 @@ const Login = () => {
               <h2>Iniciar sesión</h2>
 
               <form onSubmit={iniciarSesion}>
-                <div className="login-grupo">
-                  <label>Correo</label>
-                  <input
-                    type="email"
-                    name="correo"
-                    placeholder="Ej: jose@mail.com"
-                    value={usuario.correo}
-                    onChange={manejarCambio}
-                    required
-                  />
-                </div>
-
-                <div className="login-grupo">
-                  <label>Contraseña</label>
-                  <input
-                    type="password"
-                    name="contrasena"
-                    value={usuario.contrasena}
-                    onChange={manejarCambio}
-                    required
-                  />
-                </div>
+                {camposLogin.map(renderCampo)}
 
                 <button type="button" className="login-olvido">
                   Olvidé mi contraseña
@@ -229,10 +271,7 @@ const Login = () => {
                   <button
                     type="button"
                     className="login-btn-registro"
-                    onClick={() => {
-                      limpiarFormulario();
-                      setModoRegistro(true);
-                    }}
+                    onClick={() => cambiarModo(true)}
                   >
                     Regístrate
                   </button>
@@ -244,68 +283,7 @@ const Login = () => {
               <h2>Crear cuenta</h2>
 
               <form onSubmit={registrarUsuario}>
-                <div className="login-grupo">
-                  <label>Nombres y apellidos</label>
-                  <input
-                    type="text"
-                    name="nombres"
-                    placeholder="Ej: Juan Pérez"
-                    value={usuario.nombres}
-                    onChange={manejarCambio}
-                    required
-                  />
-                </div>
-
-                <div className="login-grupo">
-                  <label>DNI</label>
-                  <input
-                    type="text"
-                    name="dni"
-                    placeholder="Ej: 12345678"
-                    value={usuario.dni}
-                    onChange={manejarCambio}
-                    inputMode="numeric"
-                    maxLength="8"
-                    required
-                  />
-                </div>
-
-                <div className="login-grupo">
-                  <label>Teléfono</label>
-                  <input
-                    type="text"
-                    name="telefono"
-                    placeholder="Ej: 999999999"
-                    value={usuario.telefono}
-                    onChange={manejarCambio}
-                    inputMode="numeric"
-                    maxLength="9"
-                    required
-                  />
-                </div>
-
-                <div className="login-grupo">
-                  <label>Correo</label>
-                  <input
-                    type="email"
-                    name="correo"
-                    placeholder="Ej: jose@mail.com"
-                    value={usuario.correo}
-                    onChange={manejarCambio}
-                    required
-                  />
-                </div>
-
-                <div className="login-grupo">
-                  <label>Contraseña</label>
-                  <input
-                    type="password"
-                    name="contrasena"
-                    value={usuario.contrasena}
-                    onChange={manejarCambio}
-                    required
-                  />
-                </div>
+                {camposRegistro.map(renderCampo)}
 
                 <button type="submit" className="login-btn-principal">
                   Crear cuenta
@@ -317,10 +295,7 @@ const Login = () => {
                   <button
                     type="button"
                     className="login-btn-registro"
-                    onClick={() => {
-                      limpiarFormulario();
-                      setModoRegistro(false);
-                    }}
+                    onClick={() => cambiarModo(false)}
                   >
                     Iniciar sesión
                   </button>
