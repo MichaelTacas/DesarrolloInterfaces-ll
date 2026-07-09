@@ -2894,3 +2894,221 @@ section {
 .mi-reserva-detalle strong {
   color: #8f1719;
 }
+
+/* =========================
+   GESTIÓN ADMINISTRATIVA
+========================= */
+.gestion-page {
+  background: #fff8ef;
+  min-height: 100vh;
+}
+
+.gestion-hero {
+  background: linear-gradient(rgba(45, 10, 10, 0.85), rgba(120, 18, 18, 0.85)),
+    url("./img/Ceviche.png");
+  background-size: cover;
+  background-position: center;
+  color: #ffffff;
+  padding: 120px 0 90px;
+  text-align: center;
+}
+
+.gestion-etiqueta {
+  color: #ffd166;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.gestion-hero h1 {
+  font-size: 48px;
+  font-weight: 900;
+  margin: 18px 0;
+}
+
+.gestion-hero p {
+  max-width: 760px;
+  margin: auto;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.gestion-contenido {
+  padding: 80px 0;
+}
+
+.gestion-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px;
+  height: 100%;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
+  border-top: 6px solid #e0a12b;
+  position: relative;
+}
+
+.gestion-numero {
+  width: 48px;
+  height: 48px;
+  background: #8f1719;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  margin-bottom: 18px;
+}
+
+.gestion-card h2 {
+  color: #8f1719;
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 14px;
+}
+
+.gestion-card p {
+  color: #4b2c1c;
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+
+.gestion-card ul {
+  padding-left: 20px;
+  margin-bottom: 24px;
+}
+
+.gestion-card li {
+  color: #2b1a12;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.gestion-btn {
+  border-radius: 30px;
+  padding: 10px 24px;
+  font-weight: 800;
+}
+
+
+
+@media (max-width: 768px) {
+  .gestion-hero h1 {
+    font-size: 34px;
+  }
+
+  .gestion-hero {
+    padding: 100px 0 70px;
+  }
+}
+
+/* =========================
+   FORMULARIOS GESTIÓN ADMIN
+========================= */
+.gestion-panel-activo {
+  margin-top: 45px;
+}
+
+.gestion-formulario {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
+  border-top: 6px solid #8f1719;
+}
+
+.gestion-formulario h3 {
+  color: #8f1719;
+  font-size: 30px;
+  font-weight: 900;
+  margin-bottom: 24px;
+}
+
+.gestion-formulario label {
+  color: #2b1a12;
+  font-weight: 800;
+}
+
+.gestion-formulario-vacio {
+  border-top-color: #e0a12b;
+}
+
+.gestion-formulario-vacio p {
+  color: #4b2c1c;
+  margin: 0;
+}
+
+/* =========================
+   AJUSTES GESTIÓN ADMIN
+========================= */
+.gestion-container {
+  max-width: 1120px;
+}
+
+.gestion-contenido .row {
+  align-items: stretch;
+}
+
+.gestion-card {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 390px;
+}
+
+.gestion-card h2 {
+  text-align: left;
+}
+
+.gestion-card p {
+  min-height: 58px;
+}
+
+.gestion-card ul {
+  flex-grow: 1;
+}
+
+.gestion-btn {
+  align-self: flex-start;
+}
+
+.gestion-panel-activo {
+  margin-top: 45px;
+}
+
+.gestion-formulario {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
+  border-top: 6px solid #8f1719;
+}
+
+.gestion-formulario h3 {
+  color: #8f1719;
+  font-size: 30px;
+  font-weight: 900;
+  margin-bottom: 24px;
+}
+
+.gestion-formulario label {
+  color: #2b1a12;
+  font-weight: 800;
+}
+
+.gestion-form-btn {
+  border-radius: 30px;
+  padding: 10px 26px;
+  font-weight: 800;
+}
+
+.gestion-formulario-vacio {
+  border-top-color: #e0a12b;
+}
+
+.gestion-formulario-vacio p {
+  color: #4b2c1c;
+  margin: 0;
+}

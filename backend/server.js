@@ -23,9 +23,9 @@ conexion.connect((error) => {
   console.log("Conectado correctamente a MySQL");
 });
 
-/* =========================
+/* 
    REGISTRAR USUARIO
-========================= */
+ */
 app.post("/usuarios", (req, res) => {
   const { nombres, dni, telefono, correo, contrasena } = req.body;
 
@@ -62,9 +62,9 @@ app.post("/usuarios", (req, res) => {
   );
 });
 
-/* =========================
+/*
    INICIAR SESIÓN
-========================= */
+ */
 app.post("/login", (req, res) => {
   const { correo, contrasena } = req.body;
 
@@ -105,9 +105,9 @@ app.post("/login", (req, res) => {
   });
 });
 
-/* =========================
+/* 
    REGISTRAR RESERVA
-========================= */
+*/
 app.post("/reservas", (req, res) => {
   const {
     id_usuario,
@@ -162,9 +162,9 @@ app.post("/reservas", (req, res) => {
   );
 });
 
-/* =========================
+/* 
    LISTAR RESERVAS
-========================= */
+*/
 app.get("/reservas", (req, res) => {
   const sql = `
     SELECT
@@ -198,9 +198,9 @@ app.get("/reservas", (req, res) => {
   });
 });
 
-/* =========================
+/* 
    ELIMINAR RESERVA
-========================= */
+*/
 app.delete("/reservas/:id", (req, res) => {
   const { id } = req.params;
 
@@ -223,6 +223,74 @@ app.delete("/reservas/:id", (req, res) => {
       mensaje: "Reserva eliminada correctamente.",
     });
   });
+});
+
+/* =========================
+   ACTUALIZAR RESERVA
+========================= */
+app.put("/reservas/:id", (req, res) => {
+  const { id } = req.params;
+
+  const {
+    nombre,
+    telefono,
+    fecha,
+    hora,
+    personas,
+    mesa,
+    comentario,
+    estado,
+  } = req.body;
+
+  const sql = `
+    UPDATE reserva
+    SET
+      nombre = ?,
+      telefono = ?,
+      fecha = ?,
+      hora = ?,
+      personas = ?,
+      mesa = ?,
+      comentario = ?,
+      estado = ?
+    WHERE id_reserva = ?
+  `;
+
+  conexion.query(
+    sql,
+    [
+      nombre,
+      telefono,
+      fecha,
+      hora,
+      personas,
+      mesa,
+      comentario || null,
+      estado || "Activa",
+      id,
+    ],
+    (error, resultado) => {
+      if (error) {
+        console.log("Error al actualizar reserva:", error);
+
+        if (error.code === "ER_DUP_ENTRY") {
+          res.status(400).json({
+            mensaje: "La mesa ya está reservada en esa fecha y hora.",
+          });
+          return;
+        }
+
+        res.status(500).json({
+          mensaje: "Error al actualizar la reserva.",
+        });
+        return;
+      }
+
+      res.json({
+        mensaje: "Reserva actualizada correctamente.",
+      });
+    }
+  );
 });
 
 app.listen(3001, () => {

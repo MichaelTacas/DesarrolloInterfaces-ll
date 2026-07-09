@@ -3,8 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
-
-
 import Navegacion from "./Components/Navegacion";
 import Inicio from "./Components/Inicio";
 import Servicios from "./Components/Servicios";
@@ -14,6 +12,7 @@ import Reservas from "./Components/Reservas";
 import ListaReservas from "./Components/ListaReservas";
 import Calendario from "./Components/Calendario";
 import Login from "./Components/Login";
+import GestionAdmin from "./Components/GestionAdmin";
 
 const App = () => {
   const [reservas, setReservas] = useState([]);
@@ -74,6 +73,36 @@ const App = () => {
     }
   };
 
+  const actualizarReserva = async (idReserva, reservaActualizada) => {
+    try {
+      const respuesta = await fetch(
+        `http://localhost:3001/reservas/${idReserva}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(reservaActualizada),
+        }
+      );
+
+      const data = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setMensaje(data.mensaje || "Error al actualizar la reserva.");
+        return false;
+      }
+
+      setMensaje(data.mensaje || "Reserva actualizada correctamente.");
+      await cargarReservas();
+      return true;
+    } catch (error) {
+      console.log("Error al actualizar reserva:", error);
+      setMensaje("No se pudo conectar con el servidor.");
+      return false;
+    }
+  };
+
   const eliminarReserva = async (idReserva) => {
     try {
       const respuesta = await fetch(
@@ -109,6 +138,7 @@ const App = () => {
       <main>
         <Routes>
           <Route path="/" element={<Inicio />} />
+
           <Route path="/servicios" element={<Servicios />} />
 
           <Route
@@ -137,7 +167,18 @@ const App = () => {
             element={<Calendario reservas={reservas} />}
           />
 
+          <Route
+            path="/gestion-admin"
+            element={
+              <GestionAdmin
+                reservas={reservas}
+                actualizarReserva={actualizarReserva}
+              />
+            }
+          />
+
           <Route path="/contacto" element={<Contacto />} />
+
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>

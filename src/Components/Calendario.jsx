@@ -25,9 +25,7 @@ const Calendario = ({ reservas = [] }) => {
     );
   });
 
-  const reservasClienteDelDia = reservasDelCliente.filter(
-    (reserva) => reserva.fecha === fechaSeleccionada,
-  );
+  
 
   const mesasOcupadas = new Set(reservasDelDia.map((reserva) => reserva.mesa));
 

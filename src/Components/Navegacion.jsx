@@ -52,6 +52,17 @@ const Navegacion = () => {
                 >
                   Reportes
                 </NavLink>
+
+                <NavLink
+                  to="/gestion-admin"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "nav-link nav-link-restaurante activo"
+                      : "nav-link nav-link-restaurante"
+                  }
+                >
+                  Gestión
+                </NavLink>
               </>
             ) : (
               <>
